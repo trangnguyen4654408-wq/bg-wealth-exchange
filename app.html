@@ -7,7 +7,7 @@
     
     <link rel="manifest" id="my-manifest">
     <script>
-        const manifest = { "name": "BG Pro Exchange", "short_name": "BG Pro", "start_url": ".", "display": "standalone", "background_color": "#12161c", "theme_color": "#1e2329", "icons": [{ "src": "https://bin.bnbstatic.com/static/images/common/favicon.ico", "sizes": "192x192", "type": "image/png" }] };
+        const manifest = { "name": "BG Pro", "short_name": "BG Pro", "start_url": ".", "display": "standalone", "background_color": "#12161c", "theme_color": "#1e2329", "icons": [{ "src": "https://bin.bnbstatic.com/static/images/common/favicon.ico", "sizes": "192x192", "type": "image/png" }] };
         document.querySelector('#my-manifest').setAttribute('href', URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'})));
     </script>
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,18 +21,13 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { margin: 0; padding: 0; font-family: 'Roboto', sans-serif; background: var(--bg-body); color: var(--text-primary); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* LOADING SCREEN (SPLASH) */
-        #loading { position: fixed; inset: 0; background: var(--bg-body); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
-        .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid var(--gold); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .view-section { flex: 1; overflow-y: auto; display: none; padding-bottom: 80px; }
+        .view-section { flex: 1; overflow-y: auto; display: none; padding-bottom: 70px; }
         .view-section.active { display: block; }
 
         /* HEADER */
         .app-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--bg-body); position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--border); }
-        .asset-card { background: linear-gradient(135deg, #fcd535 0%, #f7931a 100%); color: #1e2329; padding: 20px; margin: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .total-balance { font-size: 30px; font-weight: 700; margin: 5px 0; }
+        .asset-card { background: linear-gradient(135deg, #fcd535 0%, #f7931a 100%); color: #1e2329; padding: 20px; margin: 15px; border-radius: 12px; }
+        .total-balance { font-size: 32px; font-weight: 700; margin: 5px 0; }
         .btn-refresh { width: 35px; height: 35px; border-radius: 50%; background: #2b3139; display: flex; justify-content: center; align-items: center; cursor: pointer; margin-right: 10px; }
 
         /* QUICK ACTIONS */
@@ -42,20 +37,20 @@
 
         /* LIST */
         .coin-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
-        .coin-logo { width: 30px; height: 30px; border-radius: 50%; background: #333; margin-right: 12px; }
+        .coin-logo { width: 30px; height: 30px; border-radius: 50%; background: #333; margin-right: 12px; object-fit: cover; }
         
-        /* TRADE */
+        /* TRADE LAYOUT */
         .trade-layout { display: flex; flex: 1; min-height: 400px; }
         .col-left { width: 42%; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 5px 0; }
         .col-right { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-        .ob-row { display: flex; justify-content: space-between; padding: 1px 5px; font-size: 11px; position: relative; }
+        .ob-row { display: flex; justify-content: space-between; padding: 1px 5px; font-size: 11px; cursor: pointer; position: relative; }
         .ob-bg { position: absolute; top:0; right:0; height:100%; opacity: 0.15; z-index:0; }
         .ob-row span { z-index:1; position:relative; }
-        
         .type-btn { flex: 1; text-align: center; padding: 10px; font-weight: 700; cursor: pointer; opacity: 0.5; background: var(--bg-card); border-radius: 4px; }
         .active-buy { background: var(--green); color: white; opacity: 1; }
         .active-sell { background: var(--red); color: white; opacity: 1; }
         .input-box { width: 100%; background: var(--border); border: none; padding: 10px; color: white; border-radius: 4px; text-align: right; font-weight:bold; }
+        .input-box:read-only { color: #888; background: #222; }
         .btn-action { width: 100%; padding: 12px; border: none; font-weight: bold; color: white; border-radius: 4px; font-size: 16px; margin-top: 10px; }
 
         /* PNL BOX */
@@ -76,16 +71,10 @@
         .nav-item.active { color: var(--gold); }
         .nav-item i { font-size: 20px; margin-bottom: 4px; }
         
-        #chart-container { height: 300px; border-bottom: 1px solid var(--border); display: none; width: 100%; background: #12161c; }
+        #chart-container { height: 300px; border-bottom: 1px solid var(--border); display: none; width: 100%; }
     </style>
 </head>
 <body>
-
-    <div id="loading">
-        <div class="spinner"></div>
-        <div style="font-weight:bold; color:var(--gold);">Đang tải dữ liệu...</div>
-        <div id="retry-msg" style="margin-top:10px; font-size:12px; color:#888; display:none;">Mạng chậm, đang thử lại...</div>
-    </div>
 
     <div id="view-home" class="view-section active">
         <div class="app-header">
@@ -216,7 +205,6 @@
         const coins = ['BTC','ETH','BNB','SOL','XRP','USDC','ADA','AVAX','DOGE','TRX','LINK','DOT','MATIC','LTC','SHIB','BCH','DAI','UNI','ATOM','IMX','NEAR','ETC','FIL','ICP','HBAR','APT','LDO','ARB','CRO','VET','QNT','MNT','MKR','GRT','OP','AAVE','ALGO','STX','SAND','EGLD','THETA','EOS','XTZ','AXS','MANA','FLOW','SNX','KCS','NEO','JASMY'];
         let favorites = JSON.parse(localStorage.getItem('bg_favs')) || ['BTC','ETH','BNB','SOL'];
         let userData = null, globalPrices = {}, currentCoin = 'BTC', tradeMode = 'buy', wsTrade = null;
-        let dataLoaded = false;
 
         function getIcon(s) { return `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${s.toLowerCase()}.png`; }
 
@@ -232,15 +220,6 @@
         }
         initUI();
 
-        // RETRY MECHANISM IF LOADING TAKES TOO LONG
-        setTimeout(() => {
-            if (!dataLoaded) {
-                document.getElementById('retry-msg').style.display = 'block';
-                // Reload after 5 sec if stuck
-                setTimeout(() => window.location.reload(), 5000);
-            }
-        }, 5000);
-
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 document.getElementById('user-name-home').innerText = user.email.split('@')[0];
@@ -255,12 +234,6 @@
                     if(d.exists()) {
                         userData = d.data();
                         renderAssets(); renderHistory(); renderNoti(); calculateTotal(); updateTradeUI();
-                        // HIDE LOADING SCREEN WHEN DATA IS READY
-                        if(!dataLoaded) {
-                            dataLoaded = true;
-                            document.getElementById('loading').style.opacity = '0';
-                            setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
-                        }
                     }
                 });
                 startTicker();
@@ -268,7 +241,6 @@
             } else window.location.href = "index.html";
         });
 
-        // CALC & UI LOGIC
         window.updateTradeCalc = () => {
             const p = parseFloat(document.getElementById('inp-price').value) || 0;
             const a = parseFloat(document.getElementById('inp-amt').value) || 0;
