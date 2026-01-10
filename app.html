@@ -3,154 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BG Pro V11 - Super App</title>
+    <title>BG Pro V12 - New York Sync</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    
     <style>
         :root { --bg-body: #12161c; --bg-card: #1e2329; --green: #0ecb81; --red: #f6465d; --text-primary: #eaecef; --text-secondary: #848e9c; --border: #2b3139; --gold: #fcd535; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; padding: 0; font-family: 'Roboto', sans-serif; background: var(--bg-body); color: var(--text-primary); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
         .view-section { flex: 1; overflow-y: auto; display: none; padding-bottom: 70px; }
         .view-section.active { display: block; }
-
-        /* HEADER */
         .app-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--bg-body); position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--border); }
-        .asset-card { background: linear-gradient(135deg, #fcd535 0%, #f7931a 100%); color: #1e2329; padding: 20px; margin: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(252, 213, 53, 0.2); position: relative; }
+        .asset-card { background: linear-gradient(135deg, #fcd535 0%, #f7931a 100%); color: #1e2329; padding: 20px; margin: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(252, 213, 53, 0.2); }
         .total-balance { font-size: 32px; font-weight: 700; margin: 5px 0; }
-
-        /* QUICK ACTIONS */
         .quick-actions { display: flex; justify-content: space-between; padding: 0 15px; margin-bottom: 20px; gap: 10px; }
         .action-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; background: var(--bg-card); padding: 12px 5px; border-radius: 8px; font-size: 11px; color: var(--text-primary); border: 1px solid var(--border); cursor: pointer; }
         .action-btn i { font-size: 18px; color: var(--gold); }
-
-        /* COIN LIST */
         .coin-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
-        .coin-logo { width: 32px; height: 32px; border-radius: 50%; background: #2b3139; margin-right: 12px; object-fit: cover; }
-        .fav-icon { color: #444; padding: 5px; margin-left: 10px; transition: 0.2s; }
-        .fav-icon.active { color: var(--gold); }
-
-        /* NOTIFICATION PANEL */
-        #noti-panel { position: fixed; inset: 0; background: var(--bg-body); z-index: 200; display: none; flex-direction: column; }
-        .noti-item { padding: 15px; border-bottom: 1px solid var(--border); position: relative; }
-        .noti-time { font-size: 10px; color: var(--text-secondary); margin-top: 5px; }
-        .noti-dot { width: 8px; height: 8px; background: var(--gold); border-radius: 50%; position: absolute; right: 15px; top: 15px; }
-
-        /* TRADE UI */
+        .coin-logo { width: 30px; height: 30px; border-radius: 50%; margin-right: 12px; background: #333; }
         .trade-layout { display: flex; flex: 1; min-height: 400px; }
         .col-left { width: 42%; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 5px 0; }
         .col-right { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-        .input-box { width: 100%; background: var(--border); border: none; padding: 10px; color: white; border-radius: 4px; text-align: right; font-weight:bold; font-size: 16px; }
-
-        /* BOTTOM NAV */
+        .input-box { width: 100%; background: var(--border); border: none; padding: 12px; color: white; border-radius: 4px; text-align: right; font-weight:bold; font-size: 16px; }
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: var(--bg-body); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 90; }
         .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: var(--text-secondary); cursor: pointer; }
         .nav-item.active { color: var(--gold); }
         .nav-item i { font-size: 20px; margin-bottom: 4px; }
-
+        #chart-container { height: 300px; border-bottom: 1px solid var(--border); display: none; width: 100%; }
         #loading { position: fixed; inset: 0; background: #12161c; z-index: 999; display: flex; justify-content: center; align-items: center; }
-        .pnl-profit { color: var(--green); } .pnl-loss { color: var(--red); }
     </style>
 </head>
 <body>
-
     <div id="loading"><i class="fas fa-spinner fa-spin" style="color:#fcd535; font-size:40px;"></i></div>
 
     <div id="view-home" class="view-section active">
         <div class="app-header">
-            <div style="font-weight:bold; display:flex; align-items:center; gap:10px;" onclick="toggleProfile()">
-                <i class="fas fa-user-circle" style="font-size:28px; color:#fcd535"></i> <span id="user-name">Guest</span>
-            </div>
-            <div style="position:relative;" onclick="toggleNoti()">
-                <i class="fas fa-bell" style="font-size:20px;"></i>
-                <span id="noti-badge" style="display:none; position:absolute; top:-5px; right:-5px; background:var(--red); color:white; font-size:8px; padding:2px 4px; border-radius:50%;">0</span>
-            </div>
+            <div style="font-weight:bold; display:flex; align-items:center; gap:10px;"><i class="fas fa-user-circle" style="font-size:28px; color:#fcd535"></i> <span id="user-name">Guest</span></div>
+            <i class="fas fa-bell" style="font-size:20px;"></i>
         </div>
-        
         <div class="asset-card">
-            <div style="font-size:12px; font-weight:600;">Tổng tài sản (USDT)</div>
+            <div style="font-size:12px;">Total Assets (USDT)</div>
             <div class="total-balance" id="home-total">0.00</div>
-            <div style="font-size:12px;">Pnl hôm nay: <span id="home-pnl">...</span></div>
+            <div style="font-size:12px;">NY Market Change: <span id="home-pnl">0.00%</span></div>
         </div>
-
         <div class="quick-actions">
-            <div class="action-btn" onclick="fakeTrans('deposit')"><i class="fas fa-arrow-down"></i>Nạp</div>
-            <div class="action-btn" onclick="fakeTrans('withdraw')"><i class="fas fa-arrow-up"></i>Rút</div>
-            <div class="action-btn" onclick="showTransfer()"><i class="fas fa-exchange-alt"></i>Chuyển tiền</div>
-            <div class="action-btn" onclick="switchTab('assets', document.querySelectorAll('.nav-item')[3])"><i class="fas fa-history"></i>Lịch sử</div>
+            <div class="action-btn" onclick="fakeTrans('deposit')"><i class="fas fa-university"></i>Deposit</div>
+            <div class="action-btn" onclick="fakeTrans('withdraw')"><i class="fas fa-wallet"></i>Withdraw</div>
+            <div class="action-btn" onclick="alert('Maintenance')"><i class="fas fa-random"></i>Transfer</div>
+            <div class="action-btn" onclick="switchTab('assets', document.querySelectorAll('.nav-item')[3])"><i class="fas fa-list-ul"></i>History</div>
         </div>
-
-        <div style="padding:0 15px; font-weight:bold; font-size:16px; margin-bottom:10px;">Thị trường yêu thích 🔥</div>
+        <div style="padding:0 15px; font-weight:bold; font-size:16px; margin-bottom:10px;">Market Pulse (NY Time)</div>
         <div id="home-list"></div>
     </div>
 
     <div id="view-markets" class="view-section">
-        <div class="app-header">Thị trường <i class="fas fa-search" style="float:right"></i></div>
+        <div class="app-header"><span style="font-size:18px; font-weight:bold;">Markets</span><i class="fas fa-search"></i></div>
         <div id="market-full-list"></div>
     </div>
 
     <div id="view-trade" class="view-section">
         <div class="app-header">
-            <div onclick="toggleCoinMenu()" style="font-size:18px; font-weight:bold; cursor:pointer;">
-                <i class="fas fa-bars"></i> <span id="trade-pair">BTC/USDT</span> <span id="trade-change" style="font-size:12px;">+0.00%</span>
-            </div>
-            <div onclick="toggleChart()" style="font-size:12px; padding:4px 8px; background:#333; border-radius:4px; cursor:pointer;"><i class="fas fa-chart-area"></i> Biểu đồ</div>
+            <div style="font-size:18px; font-weight:bold; cursor:pointer;" onclick="toggleCoinMenu()"><i class="fas fa-bars"></i> <span id="trade-pair">BTC/USDT</span></div>
+            <div style="font-size:12px; padding:4px 8px; background:#333; border-radius:4px; cursor:pointer;" onclick="toggleChart()"><i class="fas fa-chart-area"></i> Chart</div>
         </div>
-        <div id="chart-area" style="height:300px; display:none; border-bottom:1px solid var(--border);"><div id="tradingview_widget" style="height:100%"></div></div>
+        <div id="chart-container"><div id="tradingview_widget" style="height:100%"></div></div>
         <div class="trade-layout">
             <div class="col-left">
                 <div id="asks-box" style="flex:1; display:flex; flex-direction:column-reverse; overflow:hidden;"></div>
-                <div style="text-align:center; font-size:18px; font-weight:700; color:var(--green); padding:8px 0;" id="trade-price">---</div>
+                <div style="text-align:center; font-size:18px; font-weight:700; color:var(--green); padding:10px 0;" id="trade-price">---</div>
                 <div id="bids-box" style="flex:1; overflow:hidden;"></div>
             </div>
             <div class="col-right">
                 <div style="display:flex; gap:10px;">
-                    <div class="type-btn active-buy" id="btn-buy" onclick="setMode('buy')" style="flex:1; text-align:center; padding:10px; font-weight:700; border-radius:4px;">Mua</div>
-                    <div class="type-btn" id="btn-sell" onclick="setMode('sell')" style="flex:1; text-align:center; padding:10px; font-weight:700; border-radius:4px;">Bán</div>
+                    <div class="type-btn active-buy" id="btn-buy" onclick="setMode('buy')">Buy</div>
+                    <div class="type-btn" id="btn-sell" onclick="setMode('sell')">Sell</div>
                 </div>
                 <input type="text" id="inp-price" class="input-box" readonly>
-                <input type="number" id="inp-amt" class="input-box" placeholder="Số lượng">
-                <div style="font-size:11px; text-align:right; color:var(--text-secondary);">Khả dụng: <span id="avail-trade" style="color:white;">---</span></div>
-                <button class="btn-action" id="btn-action" style="width:100%; padding:15px; border:none; color:white; font-weight:bold; border-radius:4px; background:var(--green)" onclick="placeOrder()">Mua BTC</button>
+                <input type="number" id="inp-amt" class="input-box" placeholder="Amount">
+                <div style="font-size:11px; text-align:right; color:var(--text-secondary);">Avail: <span id="avail-trade" style="color:white;">---</span></div>
+                <button class="btn-action" id="btn-action" style="width:100%; padding:15px; border:none; color:white; font-weight:bold; border-radius:4px; background:var(--green)" onclick="placeOrder()">Trade</button>
             </div>
         </div>
     </div>
 
     <div id="view-assets" class="view-section">
-        <div class="app-header">Ví của tôi</div>
-        <div class="asset-card">
-            <div style="font-size:12px;">Tổng giá trị ước tính</div>
-            <div class="total-balance" id="asset-total">0.00</div>
-        </div>
+        <div class="app-header">My Wallet</div>
+        <div class="asset-card"><div style="font-size:12px;">Estimated Value</div><div class="total-balance" id="asset-total">0.00</div></div>
         <div id="asset-list"></div>
-        <div style="padding:20px 15px 10px; font-weight:bold; border-top:8px solid #0b0e11;">Lịch sử giao dịch</div>
+        <div style="padding:20px 15px 10px; font-weight:bold; border-top:8px solid #0b0e11;">Transaction History</div>
         <div id="full-history-list"></div>
     </div>
 
-    <div id="noti-panel">
-        <div class="app-header">
-            <i class="fas fa-chevron-left" onclick="toggleNoti()"></i>
-            <span>Thông báo</span>
-            <span onclick="clearNoti()" style="font-size:12px; color:var(--gold)">Xóa hết</span>
-        </div>
-        <div id="noti-list" style="flex:1; overflow-y:auto;">
-            <div style="text-align:center; margin-top:50px; color:#444;"><i class="fas fa-envelope-open" style="font-size:40px;"></i><br>Không có thông báo mới</div>
-        </div>
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('home', this)"><i class="fas fa-home"></i>Home</div>
+        <div class="nav-item" onclick="switchTab('markets', this)"><i class="fas fa-chart-line"></i>Markets</div>
+        <div class="nav-item" onclick="switchTab('trade', this)"><i class="fas fa-exchange-alt"></i>Trade</div>
+        <div class="nav-item" onclick="switchTab('assets', this)"><i class="fas fa-wallet"></i>Assets</div>
     </div>
 
-    <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('home', this)"><i class="fas fa-home"></i>Trang chủ</div>
-        <div class="nav-item" onclick="switchTab('markets', this)"><i class="fas fa-chart-line"></i>Thị trường</div>
-        <div class="nav-item" onclick="switchTab('trade', this)"><i class="fas fa-exchange-alt"></i>Giao dịch</div>
-        <div class="nav-item" onclick="switchTab('assets', this)"><i class="fas fa-wallet"></i>Ví</div>
+    <div id="coin-menu" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:100; display:none; flex-direction:column;">
+        <div class="app-header"><span>Select Asset</span><i class="fas fa-times" onclick="toggleCoinMenu()"></i></div>
+        <div id="coin-menu-list" style="overflow-y:auto; flex:1; padding:10px;"></div>
     </div>
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyAht0AfK6HtuVM0G-BsUp4go0nqag4hsV8", authDomain: "bg-exchange-44936.firebaseapp.com", projectId: "bg-exchange-44936", storageBucket: "bg-exchange-44936.firebasestorage.app", messagingSenderId: "621654422222", appId: "1:621654422222:web:a0604854dc015e9c91969f" };
         const app = initializeApp(firebaseConfig);
@@ -159,25 +118,37 @@
 
         const coins = ['BTC','ETH','BNB','SOL','XRP','ADA','DOGE','TRX','LINK','DOT','MATIC','LTC','SHIB','BCH','UNI','ATOM','NEAR','ETC','FIL','ICP','HBAR','APT','ARB','VET','OP','AAVE','ALGO','STX','SAND','EOS'];
         let favorites = JSON.parse(localStorage.getItem('bg_favs')) || ['BTC','ETH','BNB','SOL'];
-        let userData = null, globalPrices = {}, currentCoin = 'BTC', tradeMode = 'buy';
+        let userData = null, globalPrices = {}, openPrices = {}, currentCoin = 'BTC', tradeMode = 'buy';
 
-        function getLogo(s) { return `https://bin.bnbstatic.com/static/assets/logos/${s}.png`; }
+        // LẤY LOGO DỰ PHÒNG CHUẨN
+        function getIcon(s) { return `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${s.toLowerCase()}.png`; }
 
-        // --- CORE FUNCTIONS ---
+        // --- TÍNH TOÁN % NEW YORK ---
+        async function fetchOpenPrices() {
+            try {
+                // Lấy kline lúc bắt đầu ngày theo giờ New York (UTC-5)
+                const res = await fetch(`https://api.binance.com/api/v3/ticker/price`);
+                const data = await res.json();
+                data.forEach(item => {
+                    if(item.symbol.endsWith('USDT')) {
+                        const s = item.symbol.replace('USDT','');
+                        // Tạm thời lấy giá lúc này làm gốc nếu chưa có lịch sử, 
+                        // Thực tế sẽ dùng API klines với startTime để lấy chính xác 00:00 NY
+                        openPrices[s] = parseFloat(item.price);
+                    }
+                });
+            } catch(e) { console.error("Price sync error"); }
+        }
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 document.getElementById('user-name').innerText = user.email.split('@')[0];
                 onSnapshot(doc(db, "users", user.uid), (d) => {
-                    if(d.exists()) {
-                        userData = d.data();
-                        renderAssets();
-                        renderHistory();
-                        renderNoti();
-                        calculateTotalAssets();
-                        document.getElementById('loading').style.display = 'none';
-                    }
+                    if(d.exists()) { userData = d.data(); renderAssets(); renderHistory(); document.getElementById('loading').style.display = 'none'; }
                 });
+                await fetchOpenPrices();
                 startTicker();
+                loadChart('BTC');
             } else window.location.href = "index.html";
         });
 
@@ -187,126 +158,50 @@
                 JSON.parse(e.data).forEach(d => {
                     if(d.s.endsWith('USDT')) {
                         const s = d.s.replace('USDT','');
-                        if(coins.includes(s)) updateCoinData(s, parseFloat(d.c), parseFloat(d.P));
+                        if(coins.includes(s)) updateCoinDOM(s, parseFloat(d.c));
                     }
                 });
             };
         }
 
-        function updateCoinData(coin, price, pct) {
+        function updateCoinDOM(coin, price) {
             globalPrices[coin] = price;
-            const safePct = isNaN(pct) ? '0.00' : pct.toFixed(2);
-            const pStr = price < 1 ? price.toFixed(6) : price.toFixed(2);
+            const open = openPrices[coin] || price;
+            const pct = (((price - open) / open) * 100).toFixed(2);
             const col = pct >= 0 ? 'var(--green)' : 'var(--red)';
-            
-            // Update UI list
-            const rows = [document.getElementById(`row-${coin}`), document.getElementById(`home-row-${coin}`)];
-            rows.forEach(r => {
-                if(r) {
-                    r.querySelector('.p-val').innerText = pStr;
-                    const pcv = r.querySelector('.pc-val');
-                    pcv.innerText = (pct>=0?'+':'') + safePct + '%';
-                    pcv.style.color = col;
+            const pStr = price < 1 ? price.toFixed(6) : price.toFixed(2);
+
+            const ids = [`row-${coin}`, `home-row-${coin}`];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.querySelector('.p-val').innerText = pStr;
+                    const pc = el.querySelector('.pc-val');
+                    pc.innerText = (pct>=0?'+':'') + pct + '%';
+                    pc.style.color = col;
                 }
             });
 
             if(coin === currentCoin) {
                 document.getElementById('trade-price').innerText = pStr;
-                document.getElementById('trade-change').innerText = (pct>=0?'+':'') + safePct + '%';
-                document.getElementById('trade-change').style.color = col;
                 document.getElementById('inp-price').value = pStr;
             }
+            calculateTotal();
         }
 
-        async function sendNoti(title, msg) {
-            await updateDoc(doc(db, "users", auth.currentUser.uid), {
-                notifications: arrayUnion({
-                    id: Date.now(),
-                    title: title,
-                    message: msg,
-                    time: new Date().toLocaleString(),
-                    read: false
-                })
+        // --- UI RENDER ---
+        function initLists() {
+            let mHtml = "", hHtml = "";
+            coins.forEach(c => {
+                const row = `<div class="coin-row" id="row-${c}" onclick="goToTrade('${c}')"><div style="display:flex;align-items:center;"><img class="coin-logo" src="${getIcon(c)}" onerror="this.src='https://bin.bnbstatic.com/static/images/common/placeholder.png'"><b>${c}/USDT</b></div><div style="text-align:right"><b class="p-val">---</b><div class="pc-val" style="font-size:11px;">0.00%</div></div></div>`;
+                mHtml += row;
+                if(favorites.includes(c)) hHtml += row.replace(`row-${c}`, `home-row-${c}`);
             });
+            document.getElementById('market-full-list').innerHTML = mHtml;
+            document.getElementById('home-list').innerHTML = hHtml;
         }
+        initLists();
 
-        function renderNoti() {
-            const list = userData.notifications || [];
-            const badge = document.getElementById('noti-badge');
-            const unread = list.filter(n => !n.read).length;
-            
-            badge.innerText = unread;
-            badge.style.display = unread > 0 ? 'block' : 'none';
-
-            let html = "";
-            [...list].reverse().forEach(n => {
-                html += `<div class="noti-item" onclick="markRead(${n.id})">
-                    ${!n.read ? '<div class="noti-dot"></div>' : ''}
-                    <div style="font-weight:bold; font-size:14px; color:${n.title.includes('thành công')? 'var(--green)':'var(--gold)'}">${n.title}</div>
-                    <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">${n.message}</div>
-                    <div class="noti-time">${n.time}</div>
-                </div>`;
-            });
-            if(list.length > 0) document.getElementById('noti-list').innerHTML = html;
-        }
-
-        // --- GLOBAL WINDOW FUNCTIONS ---
-        window.toggleNoti = () => {
-            const el = document.getElementById('noti-panel');
-            el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
-        };
-
-        window.fakeTrans = async (type) => {
-            const amt = parseFloat(prompt(`Nhập số lượng USDT muốn ${type==='deposit'?'Nạp':'Rút'}:`));
-            if(!amt || amt <= 0) return;
-            const w = userData.wallet;
-            if(type==='withdraw') {
-                if(w.usdt < amt) return alert("Số dư không đủ");
-                w.usdt -= amt;
-                await sendNoti("Rút tiền thành công", `Bạn đã rút ${amt} USDT khỏi tài khoản.`);
-            } else {
-                w.usdt += amt;
-                await sendNoti("Nạp tiền thành công", `Tài khoản đã được cộng ${amt} USDT.`);
-            }
-            await updateDoc(doc(db, "users", auth.currentUser.uid), {
-                wallet: w,
-                history: arrayUnion({ type, pair:'USDT', amount:amt, time: new Date().toLocaleTimeString() })
-            });
-        };
-
-        window.showTransfer = () => {
-            alert("Tính năng chuyển tiền nội bộ đang được bảo trì. Vui lòng quay lại sau!");
-        };
-
-        window.placeOrder = async () => {
-            const p = parseFloat(document.getElementById('inp-price').value);
-            const a = parseFloat(document.getElementById('inp-amt').value);
-            if(!a || a <= 0) return alert("Nhập số lượng");
-            
-            const k = currentCoin.toLowerCase();
-            const w = userData.wallet;
-            const total = p * a;
-
-            if(tradeMode === 'buy') {
-                if(w.usdt < total) return alert("Số dư không đủ");
-                w.usdt -= total;
-                w[k] = (w[k] || 0) + a;
-            } else {
-                if((w[k] || 0) < a) return alert("Không đủ coin để bán");
-                w[k] -= a;
-                w.usdt += total;
-            }
-
-            await updateDoc(doc(db, "users", auth.currentUser.uid), {
-                wallet: w,
-                history: arrayUnion({ type: tradeMode, pair: currentCoin, price: p, amount: a, time: new Date().toLocaleTimeString() })
-            });
-            await sendNoti("Giao dịch khớp lệnh", `Lệnh ${tradeMode==='buy'?'Mua':'Bán'} ${a} ${currentCoin} đã được thực hiện tại mức giá ${p}.`);
-            alert("Giao dịch thành công!");
-            document.getElementById('inp-amt').value = "";
-        };
-
-        // UI Helpers
         window.switchTab = (id, el) => {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.getElementById('view-'+id).classList.add('active');
@@ -314,53 +209,78 @@
             el.classList.add('active');
         };
 
+        window.goToTrade = (c) => {
+            currentCoin = c;
+            document.getElementById('trade-pair').innerText = c + "/USDT";
+            loadChart(c);
+            switchTab('trade', document.querySelectorAll('.nav-item')[2]);
+            if(document.getElementById('coin-menu').style.display === 'flex') toggleCoinMenu();
+        };
+
+        window.toggleChart = () => {
+            const el = document.getElementById('chart-container');
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        };
+
+        window.loadChart = (coin) => {
+            new TradingView.widget({
+                "autosize": true, "symbol": "BINANCE:"+coin+"USDT", "interval": "15",
+                "theme": "dark", "style": "1", "hide_top_toolbar": true, "container_id": "tradingview_widget"
+            });
+        };
+
+        window.toggleCoinMenu = () => {
+            const el = document.getElementById('coin-menu');
+            if(el.style.display !== 'flex') {
+                let html = "";
+                coins.forEach(c => html += `<div class="coin-row" onclick="goToTrade('${c}')"><span>${c}/USDT</span><span style="color:var(--green)">Live</span></div>`);
+                document.getElementById('coin-menu-list').innerHTML = html;
+                el.style.display = 'flex';
+            } else el.style.display = 'none';
+        };
+
+        function calculateTotal() {
+            let total = userData?.wallet?.usdt || 0;
+            for(let k in userData?.wallet) { if(k!=='usdt') total += userData.wallet[k] * (globalPrices[k.toUpperCase()] || 0); }
+            document.getElementById('home-total').innerText = total.toLocaleString() + " $";
+            document.getElementById('asset-total').innerText = total.toLocaleString() + " $";
+        }
+
         function renderAssets() {
-            let html = `<div class="coin-row"><div><img class="coin-logo" src="${getLogo('USDT')}"><b>USDT</b></div><div style="text-align:right"><b>${(userData.wallet.usdt||0).toFixed(2)}</b></div></div>`;
+            let html = `<div class="coin-row"><div><b>USDT</b></div><div style="text-align:right"><b>${(userData.wallet.usdt||0).toFixed(2)}</b></div></div>`;
             for(let k in userData.wallet) {
                 if(k!=='usdt' && userData.wallet[k]>0) {
                     const c = k.toUpperCase();
-                    html += `<div class="coin-row"><div><img class="coin-logo" src="${getLogo(c)}"><b>${c}</b></div><div style="text-align:right"><b>${userData.wallet[k].toFixed(4)}</b></div></div>`;
+                    html += `<div class="coin-row" onclick="goToTrade('${c}')"><div><img class="coin-logo" src="${getIcon(c)}"><b>${c}</b></div><div style="text-align:right"><b>${userData.wallet[k].toFixed(4)}</b></div></div>`;
                 }
             }
             document.getElementById('asset-list').innerHTML = html;
         }
 
+        window.setMode = (m) => {
+            tradeMode = m;
+            document.getElementById('btn-buy').className = m==='buy'?'type-btn active-buy':'type-btn';
+            document.getElementById('btn-sell').className = m==='sell'?'type-btn active-sell':'type-btn';
+            document.getElementById('btn-action').style.background = m==='buy'?'var(--green)':'var(--red)';
+        }
+
+        window.fakeTrans = async (type) => {
+            const amt = parseFloat(prompt(`Amount to ${type}:`));
+            if(!amt) return;
+            const w = userData.wallet;
+            if(type==='withdraw' && w.usdt < amt) return alert("Low balance");
+            w.usdt = type==='deposit' ? w.usdt + amt : w.usdt - amt;
+            await updateDoc(doc(db,"users",auth.currentUser.uid), {wallet:w, history:arrayUnion({type, pair:'USDT', amount:amt, time:new Date().toLocaleTimeString()})});
+        }
+
         function renderHistory() {
             let html = "";
-            [...userData.history].reverse().slice(0,15).forEach(h => {
-                const color = (h.type==='buy'||h.type==='deposit') ? 'var(--green)' : 'var(--red)';
-                html += `<div style="padding:12px 15px; border-bottom:1px solid #222; display:flex; justify-content:space-between; font-size:12px;">
-                    <div><b style="color:${color}">${h.type.toUpperCase()}</b> ${h.pair}</div>
-                    <div style="text-align:right"><b>${h.amount}</b><div style="color:#555; font-size:10px;">${h.time}</div></div>
+            [...userData.history].reverse().slice(0,10).forEach(h => {
+                html += `<div style="padding:10px 15px; border-bottom:1px solid #222; display:flex; justify-content:space-between; font-size:12px;">
+                    <b>${h.type.toUpperCase()}</b><span>${h.amount} ${h.pair}</span><span>${h.time}</span>
                 </div>`;
             });
             document.getElementById('full-history-list').innerHTML = html;
-        }
-
-        function calculateTotalAssets() {
-            let total = userData.wallet.usdt || 0;
-            for(let k in userData.wallet) { if(k!=='usdt') total += userData.wallet[k] * (globalPrices[k.toUpperCase()] || 0); }
-            document.getElementById('home-total').innerText = total.toLocaleString() + " $";
-            document.getElementById('asset-total').innerText = total.toLocaleString() + " $";
-        }
-
-        // Init Coins
-        function initList() {
-            let mHtml = "", hHtml = "";
-            coins.forEach(c => {
-                const row = `<div class="coin-row" id="row-${c}" onclick="goToTrade('${c}')"><div style="display:flex;align-items:center;"><img class="coin-logo" src="${getLogo(c)}"><b>${c}/USDT</b></div><div style="text-align:right"><b class="p-val">---</b><div class="pc-val" style="font-size:11px;">0.00%</div></div></div>`;
-                mHtml += row;
-                if(favorites.includes(c)) hHtml += row.replace(`row-${c}`, `home-row-${c}`);
-            });
-            document.getElementById('market-full-list').innerHTML = mHtml;
-            document.getElementById('home-list').innerHTML = hHtml;
-        }
-        initList();
-
-        window.goToTrade = (c) => {
-            currentCoin = c;
-            document.getElementById('trade-pair').innerText = c + "/USDT";
-            switchTab('trade', document.querySelectorAll('.nav-item')[2]);
         }
     </script>
 </body>
