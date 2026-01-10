@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BG Pro Exchange</title>
+    <title>BG Pro V22 - Instant Load</title>
     
     <link rel="manifest" id="my-manifest">
     <script>
@@ -208,57 +208,159 @@
 
         function getIcon(s) { return `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${s.toLowerCase()}.png`; }
 
+        // --- 1. CHẠY NGAY LẬP TỨC ---
         function initUI() {
+            // Render khung sườn HTML ngay, không chờ dữ liệu
             let mHtml = "", hHtml = "";
             coins.forEach(c => {
-                const row = `<div class="coin-row" id="row-${c}" onclick="goToTrade('${c}')"><div style="display:flex;align-items:center;"><img class="coin-logo" src="${getIcon(c)}" onerror="this.src='https://bin.bnbstatic.com/static/images/common/placeholder.png'"><b>${c}/USDT</b></div><div style="text-align:right"><b class="p-val">---</b><div class="pc-val" style="font-size:11px;">0.00%</div></div></div>`;
+                const row = `<div class="coin-row" id="row-${c}" onclick="goToTrade('${c}')"><div style="display:flex;align-items:center;"><img class="coin-logo" src="${getIcon(c)}" onerror="this.src='https://bin.bnbstatic.com/static/images/common/placeholder.png'"><b>${c}/USDT</b></div><div style="text-align:right"><b class="p-val" style="color:#fff">---</b><div class="pc-val" style="font-size:11px;">0.00%</div></div></div>`;
                 mHtml += row;
                 if(favorites.includes(c)) hHtml += row.replace(`row-${c}`, `home-row-${c}`);
             });
             document.getElementById('market-full-list').innerHTML = mHtml;
             document.getElementById('home-list').innerHTML = hHtml;
         }
-        initUI();
+        initUI(); // Gọi ngay khi mở app
 
+        // --- 2. LẤY GIÁ TỪ API REST TRƯỚC (ĐỂ CÓ DỮ LIỆU NGAY) ---
+        function fetchInitialPrices() {
+            fetch('https://api.binance.com/api/v3/ticker/24hr').then(r=>r.json()).then(data => {
+                data.forEach(d => {
+                    if(d.symbol.endsWith('USDT')) {
+                        const s = d.symbol.replace('USDT','');
+                        if(coins.includes(s)) updateCoinData(s, parseFloat(d.lastPrice), parseFloat(d.priceChangePercent));
+                    }
+                });
+            }).catch(e => console.log("API Fetch error"));
+        }
+        fetchInitialPrices(); // Gọi ngay, không chờ socket
+
+        // --- 3. KẾT NỐI SOCKET ĐỂ UPDATE REALTIME ---
+        function startTicker() {
+            try {
+                const ws = new WebSocket("wss://stream.binance.com:443/ws/!miniTicker@arr");
+                ws.onmessage = (e) => {
+                    JSON.parse(e.data).forEach(d => { if(d.s.endsWith('USDT')) { const s = d.s.replace('USDT',''); if(coins.includes(s)) updateCoinData(s, parseFloat(d.c), parseFloat(d.P)); }});
+                };
+            } catch(e) { console.log("Socket Error"); }
+        }
+        startTicker();
+
+        // --- 4. FIREBASE CHẠY NGẦM ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // Hiển thị thông tin cơ bản ngay
                 document.getElementById('user-name-home').innerText = user.email.split('@')[0];
                 document.getElementById('modal-email').innerText = user.email;
                 if(user.phoneNumber) document.getElementById('modal-phone').innerText = user.phoneNumber;
-                
-                const ref = doc(db, "users", user.uid);
-                const snap = await getDoc(ref);
-                if(!snap.exists()) await setDoc(ref, { wallet: {usdt:10000}, history:[], notifications:[] });
 
+                // Lấy dữ liệu ví sau
+                const ref = doc(db, "users", user.uid);
                 onSnapshot(ref, (d) => {
                     if(d.exists()) {
                         userData = d.data();
                         renderAssets(); renderHistory(); renderNoti(); calculateTotal(); updateTradeUI();
+                    } else {
+                         // Nếu user mới chưa có data, tạo data ảo để không lỗi
+                         setDoc(ref, { wallet: {usdt:10000}, history:[], notifications:[] });
                     }
                 });
-                startTicker();
                 connectTradeDetail(currentCoin);
             } else window.location.href = "index.html";
         });
 
+        // --- CORE FUNCTIONS (AN TOÀN - KHÔNG TREO) ---
+        function updateCoinData(coin, price, pct) {
+            globalPrices[coin] = price;
+            const pStr = price < 1 ? price.toFixed(6) : price.toFixed(2);
+            const pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+            const col = pct >= 0 ? 'var(--green)' : 'var(--red)';
+
+            // Update UI an toàn (Kiểm tra element tồn tại mới update)
+            ['row-', 'home-row-'].forEach(prefix => {
+                const el = document.getElementById(prefix + coin);
+                if(el) { 
+                    el.querySelector('.p-val').innerText = pStr; 
+                    const pc = el.querySelector('.pc-val'); 
+                    pc.innerText = pctStr; 
+                    pc.style.color = col; 
+                }
+            });
+            
+            // Tính toán lại tổng tài sản mỗi khi giá thay đổi
+            if(userData) calculateTotal();
+
+            if(coin === currentCoin) {
+                const priceEl = document.getElementById('trade-price');
+                if(priceEl) priceEl.innerText = pStr;
+                
+                const changeEl = document.getElementById('trade-change');
+                if(changeEl) { changeEl.innerText = pctStr; changeEl.style.color = col; }
+                
+                const inpEl = document.getElementById('inp-price');
+                if(inpEl) inpEl.value = price;
+                
+                updateTradeCalc(); 
+            }
+        }
+
+        function calculateTotal() {
+            if(!userData || !userData.wallet) return; // Chống lỗi nếu chưa tải xong user
+            
+            let currentVal = userData.wallet.usdt || 0;
+            for(let k in userData.wallet) { 
+                if(k!=='usdt') {
+                    // Nếu chưa có giá (do socket chậm), tính tạm là 0 để không bị NaN
+                    const price = globalPrices[k.toUpperCase()] || 0; 
+                    currentVal += userData.wallet[k] * price;
+                }
+            }
+            
+            let dep = 0, wit = 0;
+            if(userData.history) userData.history.forEach(h => { if(h.type==='deposit') dep+=h.amount; if(h.type==='withdraw') wit+=h.amount; });
+            const pnl = (currentVal + wit) - dep;
+
+            // Format tiền tệ
+            const totalStr = currentVal.toLocaleString('en-US', {style:'currency', currency:'USD'});
+            const pnlStr = (pnl>0?'+':'') + pnl.toLocaleString('en-US', {style:'currency', currency:'USD'});
+            
+            // Update UI (Check null trước khi gán)
+            const hTotal = document.getElementById('home-total'); if(hTotal) hTotal.innerText = totalStr;
+            const aTotal = document.getElementById('asset-total'); if(aTotal) aTotal.innerText = totalStr;
+            
+            const hPnl = document.getElementById('home-pnl-val'); 
+            if(hPnl) { hPnl.innerText = pnlStr; hPnl.style.color = pnl>=0?'var(--green)':'var(--red)'; }
+            
+            const pDep = document.getElementById('pnl-dep'); if(pDep) pDep.innerText = dep.toLocaleString('en-US', {style:'currency', currency:'USD'});
+            const pWit = document.getElementById('pnl-wit'); if(pWit) pWit.innerText = wit.toLocaleString('en-US', {style:'currency', currency:'USD'});
+            
+            const pNet = document.getElementById('pnl-net'); 
+            if(pNet) { pNet.innerText = pnlStr; pNet.className = pnl>=0?'pnl-profit':'pnl-loss'; }
+        }
+
+        // --- CÁC HÀM UI KHÁC ---
         window.updateTradeCalc = () => {
             const p = parseFloat(document.getElementById('inp-price').value) || 0;
             const a = parseFloat(document.getElementById('inp-amt').value) || 0;
             const total = p * a;
             const totalEl = document.getElementById('trade-total-val');
-            totalEl.innerText = total.toLocaleString('en-US', {style:'currency', currency:'USD'});
-            if(!userData) return;
-            let isSufficient = false;
-            if(tradeMode === 'buy') isSufficient = (userData.wallet.usdt || 0) >= total;
-            else { const coinBal = userData.wallet[currentCoin.toLowerCase()] || 0; isSufficient = coinBal >= a; }
-            totalEl.style.color = isSufficient ? 'var(--green)' : 'var(--red)';
+            if(totalEl) {
+                totalEl.innerText = total.toLocaleString('en-US', {style:'currency', currency:'USD'});
+                if(userData && userData.wallet) {
+                    let isSufficient = false;
+                    if(tradeMode === 'buy') isSufficient = (userData.wallet.usdt || 0) >= total;
+                    else { const coinBal = userData.wallet[currentCoin.toLowerCase()] || 0; isSufficient = coinBal >= a; }
+                    totalEl.style.color = isSufficient ? 'var(--green)' : 'var(--red)';
+                }
+            }
         }
 
         function updateTradeUI() {
-            if(!userData) return;
+            if(!userData || !userData.wallet) return;
             const bal = tradeMode==='buy' ? userData.wallet.usdt : (userData.wallet[currentCoin.toLowerCase()]||0);
             const unit = tradeMode==='buy' ? 'USDT' : currentCoin;
-            document.getElementById('avail-trade').innerText = `${parseFloat(bal).toFixed(4)} ${unit}`;
+            const availEl = document.getElementById('avail-trade');
+            if(availEl) availEl.innerText = `${parseFloat(bal).toFixed(4)} ${unit}`;
             updateTradeCalc();
         }
 
@@ -273,97 +375,3 @@
         }
 
         window.setPct = (pct) => {
-            const p = parseFloat(document.getElementById('inp-price').value);
-            if(!p) return;
-            if(tradeMode === 'buy') {
-                const maxUsdt = userData.wallet.usdt || 0;
-                document.getElementById('inp-amt').value = ((maxUsdt * pct) / p).toFixed(4);
-            } else {
-                const maxCoin = userData.wallet[currentCoin.toLowerCase()] || 0;
-                document.getElementById('inp-amt').value = (maxCoin * pct).toFixed(4);
-            }
-            updateTradeCalc();
-        }
-
-        function calculateTotal() {
-            if(!userData) return;
-            let currentVal = userData.wallet.usdt || 0;
-            for(let k in userData.wallet) { if(k!=='usdt') currentVal += userData.wallet[k] * (globalPrices[k.toUpperCase()] || 0); }
-            let dep = 0, wit = 0;
-            if(userData.history) userData.history.forEach(h => { if(h.type==='deposit') dep+=h.amount; if(h.type==='withdraw') wit+=h.amount; });
-            const pnl = (currentVal + wit) - dep;
-            const totalStr = currentVal.toLocaleString('en-US', {style:'currency', currency:'USD'});
-            const pnlStr = (pnl>0?'+':'') + pnl.toLocaleString('en-US', {style:'currency', currency:'USD'});
-            document.getElementById('home-total').innerText = totalStr;
-            document.getElementById('asset-total').innerText = totalStr;
-            document.getElementById('home-pnl-val').innerText = pnlStr;
-            document.getElementById('home-pnl-val').style.color = pnl>=0?'var(--green)':'var(--red)';
-            document.getElementById('pnl-dep').innerText = dep.toLocaleString('en-US', {style:'currency', currency:'USD'});
-            document.getElementById('pnl-wit').innerText = wit.toLocaleString('en-US', {style:'currency', currency:'USD'});
-            const pnlNet = document.getElementById('pnl-net'); pnlNet.innerText = pnlStr; pnlNet.className = pnl>=0?'pnl-profit':'pnl-loss';
-        }
-
-        function startTicker() {
-            const ws = new WebSocket("wss://stream.binance.com:443/ws/!miniTicker@arr");
-            ws.onmessage = (e) => {
-                JSON.parse(e.data).forEach(d => { if(d.s.endsWith('USDT')) { const s = d.s.replace('USDT',''); if(coins.includes(s)) updateCoinData(s, parseFloat(d.c), parseFloat(d.P)); }});
-            };
-        }
-
-        function updateCoinData(coin, price, pct) {
-            globalPrices[coin] = price;
-            const pStr = price < 1 ? price.toFixed(6) : price.toFixed(2);
-            const pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
-            const col = pct >= 0 ? 'var(--green)' : 'var(--red)';
-            ['row-', 'home-row-'].forEach(prefix => {
-                const el = document.getElementById(prefix + coin);
-                if(el) { el.querySelector('.p-val').innerText = pStr; const pc = el.querySelector('.pc-val'); pc.innerText = pctStr; pc.style.color = col; }
-            });
-            calculateTotal();
-            if(coin === currentCoin) {
-                document.getElementById('trade-price').innerText = pStr;
-                document.getElementById('trade-change').innerText = pctStr;
-                document.getElementById('trade-change').style.color = col;
-                document.getElementById('inp-price').value = price;
-                updateTradeCalc(); 
-            }
-        }
-
-        window.placeOrder = async () => {
-            const p=parseFloat(document.getElementById('inp-price').value), a=parseFloat(document.getElementById('inp-amt').value);
-            if(!p||!a) return;
-            const k=currentCoin.toLowerCase(), w=userData.wallet, t=p*a;
-            if(tradeMode==='buy') { if(w.usdt<t) return alert('Số dư không đủ'); w.usdt-=t; w[k]=(w[k]||0)+a; }
-            else { if((w[k]||0)<a) return alert('Số dư coin không đủ'); w[k]-=a; w.usdt+=t; }
-            const msg = `Khớp lệnh ${tradeMode==='buy'?'Mua':'Bán'} ${a} ${currentCoin} giá ${p}`;
-            await updateDoc(doc(db,"users",auth.currentUser.uid), { wallet:w, history:arrayUnion({type:tradeMode, pair:currentCoin, price:p, amount:a, time:new Date().toLocaleTimeString()}), notifications: arrayUnion({id: Date.now(), title: "Giao dịch thành công", msg: msg, read: false, time: new Date().toLocaleString()}) });
-            alert('Thành công'); document.getElementById('inp-amt').value=""; updateTradeCalc();
-        }
-
-        function connectTradeDetail(coin) {
-            if(wsTrade) wsTrade.close();
-            wsTrade = new WebSocket(`wss://stream.binance.com:443/ws/${coin.toLowerCase()}usdt@depth10@100ms`);
-            wsTrade.onmessage = (e) => {
-                const d = JSON.parse(e.data);
-                let ha = "", hb = "";
-                d.asks.reverse().slice(0,5).forEach(x => ha += `<div class="ob-row"><div class="ob-bg" style="width:${Math.min(x[1]*10, 100)}%; background:var(--red)"></div><span style="color:var(--red)">${parseFloat(x[0])}</span><span>${parseFloat(x[1]).toFixed(2)}</span></div>`);
-                d.bids.slice(0,5).forEach(x => hb += `<div class="ob-row"><div class="ob-bg" style="width:${Math.min(x[1]*10, 100)}%; background:var(--green)"></div><span style="color:var(--green)">${parseFloat(x[0])}</span><span>${parseFloat(x[1]).toFixed(2)}</span></div>`);
-                document.getElementById('asks-box').innerHTML = ha; document.getElementById('bids-box').innerHTML = hb;
-            }
-        }
-
-        function renderAssets() { let h = `<div class="coin-row"><div><img class="coin-logo" src="${getIcon('USDT')}"><b>USDT</b></div><div style="text-align:right"><b>${(userData.wallet.usdt||0).toFixed(2)}</b></div></div>`; for(let k in userData.wallet) { if(k!=='usdt' && userData.wallet[k]>0) { const c = k.toUpperCase(); h += `<div class="coin-row" onclick="goToTrade('${c}')"><div><img class="coin-logo" src="${getIcon(c)}"><b>${c}</b></div><div style="text-align:right"><b>${userData.wallet[k].toFixed(4)}</b></div></div>`; } } document.getElementById('asset-list').innerHTML = h; }
-        function renderNoti() { const l=userData.notifications||[]; document.getElementById('noti-badge').style.display = l.filter(n=>!n.read).length>0?'block':'none'; let h=""; [...l].reverse().forEach(n=>{ h+=`<div class="noti-item">${!n.read?'<div class="noti-dot"></div>':''}<div style="font-weight:bold;font-size:13px;color:var(--gold)">${n.title}</div><div style="font-size:12px;color:#ccc;">${n.msg}</div><div style="font-size:10px;color:#666;">${n.time}</div></div>`; }); document.getElementById('noti-list').innerHTML=h; }
-        window.fakeTrans = async (type) => { const a = parseFloat(prompt(`Nhập số tiền:`)); if(!a) return; const w = userData.wallet; if(type==='withdraw'){if(w.usdt<a)return alert("Số dư thấp"); w.usdt-=a;}else w.usdt+=a; await updateDoc(doc(db,"users",auth.currentUser.uid),{wallet:w, history:arrayUnion({type,pair:'USDT',price:1,amount:a,time:new Date().toLocaleTimeString()}), notifications:arrayUnion({id:Date.now(),title:`${type==='deposit'?'Nạp':'Rút'} tiền`,msg:`Thành công ${a} USDT`,read:false,time:new Date().toLocaleString()})}); alert("Thành công"); }
-        function renderHistory() { let h=""; [...userData.history].reverse().slice(0,20).forEach(x=>{ h+=`<div style="padding:10px 0;border-bottom:1px solid #333;display:flex;justify-content:space-between;font-size:12px;"><div><b style="color:${x.type.includes('buy')||x.type.includes('deposit')?'var(--green)':'var(--red)'}">${x.type.toUpperCase()}</b> ${x.pair}</div><div>${x.amount} <span style="color:#666">${x.time}</span></div></div>` }); document.getElementById('full-history-list').innerHTML=h; }
-        window.switchTab = (id, el) => { document.querySelectorAll('.view-section').forEach(d=>d.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); el.classList.add('active'); }
-        window.goToTrade = (c) => { currentCoin=c; document.getElementById('trade-pair').innerText=c+'/USDT'; connectTradeDetail(c); window.loadChart(c); setMode('buy'); switchTab('trade', document.querySelectorAll('.nav-item')[2]); }
-        window.loadChart = (c) => { document.getElementById('chart-container').innerHTML = '<div id="tradingview_widget" style="height:100%"></div>'; new TradingView.widget({"autosize": true, "symbol": "BINANCE:"+c+"USDT", "interval": "15", "theme": "dark", "style": "1", "toolbar_bg": "#f1f3f6", "hide_top_toolbar": true, "container_id": "tradingview_widget"}); }
-        window.toggleChart = () => { const e=document.getElementById('chart-container'); e.style.display=e.style.display==='block'?'none':'block'; }
-        window.toggleProfile = () => { const e=document.getElementById('user-modal'); e.style.display=e.style.display==='flex'?'none':'flex'; }
-        window.toggleNoti = () => { const e=document.getElementById('noti-panel'); e.style.display=e.style.display==='flex'?'none':'flex'; }
-        window.doLogout = () => signOut(auth).then(()=>window.location.href="index.html");
-        window.toggleCoinMenu = () => { const e=document.getElementById('coin-menu'); if(e.style.display!=='flex'){let h="";coins.forEach(c=>h+=`<div class="coin-row" onclick="goToTrade('${c}');document.getElementById('coin-menu').style.display='none'"><img src="${getIcon(c)}" style="width:20px;margin-right:10px;">${c}/USDT</div>`);document.getElementById('coin-menu-list').innerHTML=h;e.style.display='flex';}else e.style.display='none'; }
-    </script>
-</body>
-</html>
