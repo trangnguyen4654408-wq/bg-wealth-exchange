@@ -90,3 +90,9 @@ window.handleAuth = () => {
         .catch(e => errorMsg.innerText = "Sai tài khoản hoặc mật khẩu.");
     }
 }
+
+// TEST LOGIN
+window.handleTestLogin = () => {
+    sessionStorage.setItem('isTestMode', 'true');
+    window.location.href = "app.html";
+}

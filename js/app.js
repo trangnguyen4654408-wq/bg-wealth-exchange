@@ -2,66 +2,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import { doc, onSnapshot, updateDoc, arrayUnion, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { auth, db } from "./config.js";
 
-// --- FIREBASE LOGIC ---
-try {
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            window.currentUser = user;
-            document.getElementById('user-name-home').innerText = user.email.split('@')[0];
-            document.getElementById('modal-email').innerText = user.email;
-
-            const ref = doc(db, "users", user.uid);
-            onSnapshot(ref, (d) => {
-                if(d.exists()) {
-                    window.userData = d.data();
-                    window.updateUI(); // Cập nhật giao diện khi có data
-                } else {
-                    setDoc(ref, { wallet: {usdt: 10000}, history: [] });
-                }
-            });
-        } else {
-            window.location.href = "index.html";
-        }
-    });
-
-    window.userLogout = () => signOut(auth).then(()=>window.location.href="index.html");
-
-    // Hàm Trade thực thi Firebase
-    window.execTrade = async (mode, coin, price, amount) => {
-        const w = window.userData.wallet;
-        const k = coin.toLowerCase();
-        const total = price * amount;
-
-        if(mode === 'buy') {
-            if((w.usdt||0) < total) return showToast("Không đủ USDT", "error");
-            w.usdt -= total;
-            w[k] = (w[k]||0) + amount;
-        } else {
-            if((w[k]||0) < amount) return showToast("Không đủ Coin", "error");
-            w[k] -= amount;
-            w.usdt = (w.usdt||0) + total;
-        }
-
-        await updateDoc(doc(db,"users",window.currentUser.uid), {
-            wallet: w,
-            history: arrayUnion({type: mode, pair: coin, price: price, amount: amount, time: new Date().toLocaleTimeString()})
-        });
-        showToast("Giao dịch thành công!", "success");
-        document.getElementById('inp-amt').value = "";
-    }
-
-    window.execFakeTrans = async (type, amt) => {
-        const w = window.userData.wallet;
-        if(type === 'Rút') { if((w.usdt||0) < amt) return showToast("Không đủ tiền", "error"); w.usdt -= amt; }
-        else w.usdt = (w.usdt||0) + amt;
-
-        await updateDoc(doc(db,"users",window.currentUser.uid), { wallet: w });
-        showToast("Giao dịch thành công", "success");
-    }
-
-} catch(e) { console.log("Lỗi Firebase:", e); }
-
-// --- UI LOGIC ---
+// --- UI LOGIC & DEFINITIONS ---
 const coins = ['BTC','ETH','BNB','SOL','XRP','USDC','ADA','AVAX','DOGE','TRX','LINK','DOT','MATIC','LTC'];
 let currentCoin = 'BTC';
 let tradeMode = 'buy';
@@ -136,31 +77,6 @@ window.fakeAction = (type) => {
     if(amt) window.execFakeTrans(type, amt);
 }
 
-// 4. Lấy dữ liệu giá (Chạy 2 nguồn: API + Socket)
-function fetchPrices() {
-    fetch('https://api.binance.com/api/v3/ticker/24hr').then(r=>r.json()).then(data => {
-        data.forEach(d => {
-            if(d.symbol.endsWith('USDT')) {
-                const s = d.symbol.replace('USDT','');
-                if(coins.includes(s)) updatePrice(s, parseFloat(d.lastPrice), parseFloat(d.priceChangePercent));
-            }
-        });
-    });
-}
-fetchPrices(); setInterval(fetchPrices, 5000); // Dự phòng nếu Socket chết
-
-// Socket Realtime
-const ws = new WebSocket("wss://stream.binance.com:443/ws/!miniTicker@arr");
-ws.onmessage = (e) => {
-    const data = JSON.parse(e.data);
-    data.forEach(d => {
-        if(d.s.endsWith('USDT')) {
-            const s = d.s.replace('USDT','');
-            if(coins.includes(s)) updatePrice(s, parseFloat(d.c), parseFloat(d.P));
-        }
-    });
-};
-
 function updatePrice(coin, price, pct) {
     coinPrices[coin] = price;
     const col = pct >= 0 ? 'var(--green)' : 'var(--red)';
@@ -215,3 +131,141 @@ window.updateUI = () => {
     const avail = tradeMode === 'buy' ? (w.usdt||0) : (w[currentCoin.toLowerCase()]||0);
     document.getElementById('avail-trade').innerText = avail.toFixed(4) + (tradeMode==='buy'?' USDT': ' '+currentCoin);
 }
+
+// --- FIREBASE / TEST LOGIC ---
+try {
+    const isTestMode = sessionStorage.getItem('isTestMode') === 'true';
+
+    if (isTestMode) {
+        // --- TEST MODE ---
+        window.currentUser = { uid: "test_user", email: "test@bgwealth.com" };
+        setTimeout(() => {
+            document.getElementById('user-name-home').innerText = "Test User";
+            document.getElementById('modal-email').innerText = "test@bgwealth.com";
+        }, 100);
+
+        window.userData = { wallet: { usdt: 10000, btc: 0.5, eth: 2.0 }, history: [] };
+
+        // This will now work because updateUI is defined above
+        window.updateUI();
+
+        showToast("Đang chạy chế độ Test (Không lưu dữ liệu)", "info");
+
+        window.userLogout = () => {
+            sessionStorage.removeItem('isTestMode');
+            window.location.href = "index.html";
+        }
+
+        window.execTrade = async (mode, coin, price, amount) => {
+            const w = window.userData.wallet;
+            const k = coin.toLowerCase();
+            const total = price * amount;
+
+            if(mode === 'buy') {
+                if((w.usdt||0) < total) return showToast("Không đủ USDT", "error");
+                w.usdt -= total;
+                w[k] = (w[k]||0) + amount;
+            } else {
+                if((w[k]||0) < amount) return showToast("Không đủ Coin", "error");
+                w[k] -= amount;
+                w.usdt = (w.usdt||0) + total;
+            }
+
+            window.updateUI();
+            showToast("Giao dịch thành công (Test Mode)!", "success");
+            document.getElementById('inp-amt').value = "";
+        }
+
+        window.execFakeTrans = async (type, amt) => {
+            const w = window.userData.wallet;
+            if(type === 'Rút') { if((w.usdt||0) < amt) return showToast("Không đủ tiền", "error"); w.usdt -= amt; }
+            else w.usdt = (w.usdt||0) + amt;
+
+            window.updateUI();
+            showToast("Giao dịch thành công (Test Mode)", "success");
+        }
+
+    } else {
+        // --- NORMAL MODE ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.currentUser = user;
+                document.getElementById('user-name-home').innerText = user.email.split('@')[0];
+                document.getElementById('modal-email').innerText = user.email;
+
+                const ref = doc(db, "users", user.uid);
+                onSnapshot(ref, (d) => {
+                    if(d.exists()) {
+                        window.userData = d.data();
+                        window.updateUI(); // Cập nhật giao diện khi có data
+                    } else {
+                        setDoc(ref, { wallet: {usdt: 10000}, history: [] });
+                    }
+                });
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        window.userLogout = () => signOut(auth).then(()=>window.location.href="index.html");
+
+        window.execTrade = async (mode, coin, price, amount) => {
+            const w = window.userData.wallet;
+            const k = coin.toLowerCase();
+            const total = price * amount;
+
+            if(mode === 'buy') {
+                if((w.usdt||0) < total) return showToast("Không đủ USDT", "error");
+                w.usdt -= total;
+                w[k] = (w[k]||0) + amount;
+            } else {
+                if((w[k]||0) < amount) return showToast("Không đủ Coin", "error");
+                w[k] -= amount;
+                w.usdt = (w.usdt||0) + total;
+            }
+
+            await updateDoc(doc(db,"users",window.currentUser.uid), {
+                wallet: w,
+                history: arrayUnion({type: mode, pair: coin, price: price, amount: amount, time: new Date().toLocaleTimeString()})
+            });
+            showToast("Giao dịch thành công!", "success");
+            document.getElementById('inp-amt').value = "";
+        }
+
+        window.execFakeTrans = async (type, amt) => {
+            const w = window.userData.wallet;
+            if(type === 'Rút') { if((w.usdt||0) < amt) return showToast("Không đủ tiền", "error"); w.usdt -= amt; }
+            else w.usdt = (w.usdt||0) + amt;
+
+            await updateDoc(doc(db,"users",window.currentUser.uid), { wallet: w });
+            showToast("Giao dịch thành công", "success");
+        }
+    }
+
+} catch(e) { console.log("Lỗi Firebase:", e); }
+
+// --- DATA FETCHING ---
+// 4. Lấy dữ liệu giá (Chạy 2 nguồn: API + Socket)
+function fetchPrices() {
+    fetch('https://api.binance.com/api/v3/ticker/24hr').then(r=>r.json()).then(data => {
+        data.forEach(d => {
+            if(d.symbol.endsWith('USDT')) {
+                const s = d.symbol.replace('USDT','');
+                if(coins.includes(s)) updatePrice(s, parseFloat(d.lastPrice), parseFloat(d.priceChangePercent));
+            }
+        });
+    });
+}
+fetchPrices(); setInterval(fetchPrices, 5000); // Dự phòng nếu Socket chết
+
+// Socket Realtime
+const ws = new WebSocket("wss://stream.binance.com:443/ws/!miniTicker@arr");
+ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    data.forEach(d => {
+        if(d.s.endsWith('USDT')) {
+            const s = d.s.replace('USDT','');
+            if(coins.includes(s)) updatePrice(s, parseFloat(d.c), parseFloat(d.P));
+        }
+    });
+};
