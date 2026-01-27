@@ -39,3 +39,10 @@ body { margin: 0; padding: 0; font-family: 'Roboto', sans-serif; background: var
 .nav-item i { font-size: 22px; margin-bottom: 4px; }
 
 #chart-container { height: 300px; border-bottom: 1px solid var(--border); display: none; width: 100%; background: #12161c; }
+
+/* NEW STYLES */
+.wallet-table th { color: var(--text-secondary); font-weight: 500; font-size: 12px; padding: 10px; text-align: right; }
+.wallet-table th:first-child { text-align: left; }
+.wallet-table td { padding: 12px 10px; font-size: 14px; }
+
+.app-logo { border-radius: 50%; border: 1px solid var(--gold); }
