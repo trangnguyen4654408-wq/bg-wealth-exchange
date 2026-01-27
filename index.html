@@ -199,7 +199,10 @@
                 .catch(e => errorMsg.innerText = e.message);
             } else {
                 signInWithEmailAndPassword(auth, email, pass)
-                .catch(e => errorMsg.innerText = "Sai tài khoản hoặc mật khẩu.");
+                .catch(e => {
+                    console.error(e);
+                    errorMsg.innerText = "Lỗi: " + e.message + " (" + e.code + ")";
+                });
             }
         }
     </script>
