@@ -78,6 +78,12 @@ window.handleAuth = () => {
     if(!email || !pass) { errorMsg.innerText = "Vui lòng nhập đầy đủ thông tin"; return; }
     if(pass.length < 6) { errorMsg.innerText = "Mật khẩu tối thiểu 6 ký tự"; return; }
 
+    // Demo Account Check
+    if(!isRegister && email === 'admin@gmail.com' && pass === '123456') {
+        window.handleTestLogin();
+        return;
+    }
+
     if (isRegister) {
         if(!document.getElementById('terms-check').checked) { errorMsg.innerText = "Bạn chưa đồng ý điều khoản."; return; }
         if(pass !== confirmPass) { errorMsg.innerText = "Mật khẩu không khớp"; return; }
@@ -89,4 +95,10 @@ window.handleAuth = () => {
         signInWithEmailAndPassword(auth, email, pass)
         .catch(e => errorMsg.innerText = "Sai tài khoản hoặc mật khẩu.");
     }
+}
+
+// TEST LOGIN
+window.handleTestLogin = () => {
+    sessionStorage.setItem('isTestMode', 'true');
+    window.location.href = "app.html";
 }
