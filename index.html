@@ -15,7 +15,7 @@
 
     <div id="auth-screen" class="auth-container">
         <div class="brand-logo">
-            <h2 style="color:var(--primary); margin:0;">BG WEALTH</h2>
+            <h2 id="logo-main" style="color:var(--primary); margin:0; cursor:pointer;" onclick="location.href='index.html'">BG WEALTH</h2>
         </div>
 
         <h2 id="page-title" style="margin-bottom: 25px; font-size: 22px;">Đăng nhập</h2>
@@ -46,20 +46,16 @@
                 <input type="password" id="confirm-input" class="input-box" placeholder="Nhập lại mật khẩu">
             </div>
 
-            <div class="terms-container register-mode hidden">
-                <input type="checkbox" id="terms-check">
-                <label for="terms-check">Tôi đồng ý với điều khoản sử dụng.</label>
-            </div>
-
             <p id="error-msg" style="color: var(--red); font-size: 13px; min-height: 20px; margin-bottom: 5px;"></p>
 
             <button id="btn-submit" class="btn-primary" onclick="handleAuth()">Đăng nhập</button>
-            <button class="btn-secondary" onclick="handleTestLogin()">Đăng nhập thử nghiệm</button>
+            
+            <button class="btn-primary" style="background-color: #333; color: white; margin-top: 10px;" onclick="handleTestLogin()">Đăng nhập thử nghiệm</button>
 
             <div class="divider">Hoặc tiếp tục với</div>
             <div class="social-buttons">
                 <button class="btn-social google" onclick="loginGoogleRedirect()"><i class="fab fa-google" style="color: #fff;"></i> Google</button>
-                <button class="btn-social apple" onclick="showToast('Tính năng đang bảo trì', 'info')"><i class="fab fa-apple" style="color: #fff;"></i> Apple</button>
+                <button class="btn-social apple" onclick="alert('Tính năng đang bảo trì')"><i class="fab fa-apple" style="color: #fff;"></i> Apple</button>
             </div>
         </div>
 
@@ -71,5 +67,25 @@
 
     <script src="js/ui.js"></script>
     <script type="module" src="js/auth.js"></script>
+    
+    <script>
+        function handleTestLogin() {
+            const email = document.getElementById('email-input').value;
+            const pass = document.getElementById('pass-input').value;
+            // Tài khoản backdoor: admin@gmail.com / 123456
+            if(email === 'admin@gmail.com' && pass === '123456') {
+                localStorage.setItem('isLoggedIn', 'true');
+                // Lưu thêm thông tin giả lập để Ví hiện số dư ngay
+                localStorage.setItem('userBalance', JSON.stringify({
+                    usdt: 10000,
+                    btc: 0.5,
+                    eth: 2.0
+                }));
+                window.location.href = 'app.html';
+            } else {
+                document.getElementById('error-msg').innerText = "Sai tài khoản hoặc mật khẩu thử nghiệm!";
+            }
+        }
+    </script>
 </body>
 </html>
