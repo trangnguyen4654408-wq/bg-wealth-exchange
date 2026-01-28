@@ -22,14 +22,16 @@
 
     <div id="view-home" class="view-section active">
         <div class="app-header">
-            <div style="font-weight:bold; display:flex; align-items:center; gap:10px;" onclick="openProfile()">
-                <img src="https://bin.bnbstatic.com/static/images/common/favicon.ico" class="app-logo" style="width:30px;height:30px;">
+            <div style="font-weight:bold; display:flex; align-items:center; gap:10px;">
+                <img src="https://bin.bnbstatic.com/static/images/common/favicon.ico" class="app-logo" style="width:30px;height:30px;" onclick="window.location.reload()">
                 <div>
                     <span id="user-name-home">Guest</span>
-                    <div id="kyc-status-home" style="font-size:10px; color:var(--text-secondary)">Unverified <i class="fas fa-times-circle"></i></div>
                 </div>
             </div>
-            <i class="fas fa-bell" style="font-size:22px; padding:10px;" onclick="openNoti()"></i>
+            <div style="display:flex; gap:15px; align-items:center;">
+                <i class="fas fa-bell" style="font-size:20px;" onclick="openNoti()"></i>
+                <i class="fas fa-user-circle" style="font-size:24px; color:var(--text-primary);" onclick="openProfile()"></i>
+            </div>
         </div>
         <div class="asset-card">
             <div style="font-size:12px;">Tổng tài sản (USDT)</div>
@@ -102,7 +104,11 @@
                     <button onclick="verifyIdentity()" id="btn-kyc" style="background:#333; border:1px solid #555; color:white; padding:5px 10px; border-radius:4px;">Xác minh danh tính (KYC)</button>
                 </div>
             </div>
-            <button class="btn-logout" onclick="userLogout()">Đăng xuất</button>
+            <div class="menu-list">
+                <div class="menu-item" onclick="switchTab('assets', 3); openProfile();"><i class="fas fa-wallet"></i> Ví của tôi</div>
+                <div class="menu-item" onclick="verifyIdentity()"><i class="fas fa-id-card"></i> Xác minh KYC</div>
+            </div>
+            <button class="btn-logout" onclick="userLogout()" style="margin-top:20px;">Đăng xuất</button>
         </div>
     </div>
     <div id="noti-panel"><div class="app-header"><i class="fas fa-arrow-left" onclick="openNoti()"></i><span>Thông báo</span></div><div id="noti-list" style="padding:10px; color:#ccc;">Không có thông báo mới</div></div>
