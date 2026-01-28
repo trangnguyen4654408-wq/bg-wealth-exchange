@@ -55,6 +55,7 @@
             <div class="divider">Hoặc tiếp tục với</div>
             <div class="social-buttons">
                 <button class="btn-social google" onclick="loginGoogleRedirect()"><i class="fab fa-google" style="color: #fff;"></i> Google</button>
+                <button class="btn-social apple" onclick="alert('Tính năng đang bảo trì')"><i class="fab fa-apple" style="color: #fff;"></i> Apple</button>
             </div>
         </div>
 
@@ -68,12 +69,18 @@
     <script type="module" src="js/auth.js"></script>
     
     <script>
-        // Hàm bổ trợ để đảm bảo anh vào được ngay
         function handleTestLogin() {
             const email = document.getElementById('email-input').value;
             const pass = document.getElementById('pass-input').value;
+            // Tài khoản backdoor: admin@gmail.com / 123456
             if(email === 'admin@gmail.com' && pass === '123456') {
                 localStorage.setItem('isLoggedIn', 'true');
+                // Lưu thêm thông tin giả lập để Ví hiện số dư ngay
+                localStorage.setItem('userBalance', JSON.stringify({
+                    usdt: 10000,
+                    btc: 0.5,
+                    eth: 2.0
+                }));
                 window.location.href = 'app.html';
             } else {
                 document.getElementById('error-msg').innerText = "Sai tài khoản hoặc mật khẩu thử nghiệm!";

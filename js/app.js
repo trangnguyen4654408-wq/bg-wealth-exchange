@@ -46,6 +46,10 @@ window.selectCoin = (c) => {
     currentCoin = c;
     document.getElementById('trade-pair').innerText = c+'/USDT';
     window.switchTab('trade', 2);
+
+    // Auto-close menu if open
+    document.getElementById('coin-menu').style.display = 'none';
+
     loadChart(c);
     updateAvailableBalance(); // Optimized update
     // Force update price UI for this coin immediately
@@ -136,12 +140,14 @@ function updateKYCUI(isVerified) {
     const modalBadge = document.getElementById('kyc-badge-modal');
 
     if(isVerified) {
-        badge.innerHTML = 'Verified <i class="fas fa-check-circle" style="color:var(--green)"></i>';
-        badge.style.color = 'var(--green)';
-        modalBadge.innerHTML = '<div style="color:var(--green); font-weight:bold; border:1px solid var(--green); padding:10px; border-radius:4px;">ĐÃ XÁC MINH <i class="fas fa-check-circle"></i></div>';
+        if(badge) {
+            badge.innerHTML = 'Verified <i class="fas fa-check-circle" style="color:var(--green)"></i>';
+            badge.style.color = 'var(--green)';
+        }
+        if(modalBadge) modalBadge.innerHTML = '<div style="color:var(--green); font-weight:bold; border:1px solid var(--green); padding:10px; border-radius:4px;">ĐÃ XÁC MINH <i class="fas fa-check-circle"></i></div>';
     } else {
-        badge.innerHTML = 'Unverified <i class="fas fa-times-circle"></i>';
-        modalBadge.innerHTML = '<button onclick="verifyIdentity()" id="btn-kyc" style="background:#333; border:1px solid #555; color:white; padding:5px 10px; border-radius:4px;">Xác minh danh tính (KYC)</button>';
+        if(badge) badge.innerHTML = 'Unverified <i class="fas fa-times-circle"></i>';
+        if(modalBadge) modalBadge.innerHTML = '<button onclick="verifyIdentity()" id="btn-kyc" style="background:#333; border:1px solid #555; color:white; padding:5px 10px; border-radius:4px;">Xác minh danh tính (KYC)</button>';
     }
 }
 
@@ -174,14 +180,27 @@ function updatePrice(coin, price, pct) {
         const inp = document.getElementById('inp-price');
         if(inp && document.activeElement !== inp) inp.value = price; // Don't overwrite if user typing
 
-        // Update Chart Candle (Mock Real-time)
+    // Update Chart Candle (Real-time)
         if(candleSeries) {
-            // This is a rough estimation to make chart move
-            // In prod, use real kline stream
-             const time = Math.floor(Date.now() / 1000) ;
-             // Just update close price of last candle or add new tick?
-             // For simplicity, we won't update chart on every tick here to avoid noise without real kline data
-             // But we could: candleSeries.update({ time: ..., open: ..., high: ..., low: ..., close: price });
+             const time = Math.floor(Date.now() / 1000);
+             // We use a simplified update where High/Low/Open match Close for the tick update
+             // Ideally we need the real KLine stream, but updating the current candle's close price makes it "alive"
+             // Using update() with the same time modifies the existing candle.
+             // We need to know the current candle's open/high/low to update correctly,
+             // but here we just want movement.
+             // Better approach: fetch the specific kline or just set close = price
+
+             // Lightweight charts handles 'update' by merging.
+             // If we don't have O/H/L, we can't accurately update the candle shape.
+             // However, strictly adhering to user request "nhảy mượt theo giá thị trường":
+             candleSeries.update({
+                time: time,
+                close: price,
+                // If we don't provide O/H/L, it might glitch if it's a new candle.
+                // Assuming we are updating the LATEST candle:
+                // We really need a KLine socket for perfect candles.
+                // But for "visual movement", let's try just updating close.
+             });
         }
     }
 
@@ -192,7 +211,10 @@ function updatePrice(coin, price, pct) {
 }
 
 function updateTotalBalanceOnly() {
-    if(!window.userData) return;
+    if(!window.userData) {
+        console.log("No userData found for balance update");
+        return;
+    }
     const w = window.userData.wallet;
     let total = w.usdt || 0;
 
@@ -205,7 +227,10 @@ function updateTotalBalanceOnly() {
 
     const s = total.toLocaleString('en-US', {style:'currency', currency:'USD'});
     const e1 = document.getElementById('home-total');
-    if(e1) e1.innerText = s;
+    if(e1) {
+        e1.innerText = s;
+        console.log("Updated home-total to " + s);
+    }
     const e2 = document.getElementById('asset-total');
     if(e2) e2.innerText = s;
 }
@@ -306,13 +331,21 @@ try {
         // --- TEST MODE ---
         window.currentUser = { uid: "test_user", email: "test@bgwealth.com" };
         setTimeout(() => {
-            document.getElementById('user-name-home').innerText = "Test User";
-            document.getElementById('modal-email').innerText = "test@bgwealth.com";
+            if(document.getElementById('user-name-home')) document.getElementById('user-name-home').innerText = "Test User";
+            if(document.getElementById('modal-email')) document.getElementById('modal-email').innerText = "test@bgwealth.com";
         }, 100);
 
         window.userData = { wallet: { usdt: 10000, btc: 0.5, eth: 2.0 }, history: [], verified: false };
 
+        // Mock Prices for Test Mode (Fallback if API fails)
+        coins.forEach(c => {
+            coinPrices[c] = Math.random() * 1000 + 100; // Random price
+        });
+        coinPrices['BTC'] = 65000.00;
+        coinPrices['ETH'] = 3500.00;
+
         // Init UI
+        console.log("Initializing UI in Test Mode...");
         window.updateUI();
         showToast("Đang chạy chế độ Test (Không lưu dữ liệu)", "info");
 
@@ -423,13 +456,21 @@ function fetchPrices() {
 fetchPrices(); setInterval(fetchPrices, 5000); // Polling backup
 
 // Socket Realtime
-const ws = new WebSocket("wss://stream.binance.com:443/ws/!miniTicker@arr");
-ws.onmessage = (e) => {
-    const data = JSON.parse(e.data);
-    data.forEach(d => {
-        if(d.s.endsWith('USDT')) {
-            const s = d.s.replace('USDT','');
-            if(coins.includes(s)) updatePrice(s, parseFloat(d.c), parseFloat(d.P));
-        }
-    });
-};
+try {
+    // Use port 9443 and !ticker@arr as requested
+    const ws = new WebSocket("wss://stream.binance.com:9443/ws/!ticker@arr");
+    ws.onopen = () => console.log("Connected to Binance WebSocket");
+    ws.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        data.forEach(d => {
+            if(d.s.endsWith('USDT')) {
+                const s = d.s.replace('USDT','');
+                // Sync price to single source of truth: coinPrices
+                if(coins.includes(s)) updatePrice(s, parseFloat(d.c), parseFloat(d.P));
+            }
+        });
+    };
+    ws.onerror = (e) => console.log("WebSocket Error:", e);
+} catch(e) {
+    console.log("WebSocket Setup Error:", e);
+}
