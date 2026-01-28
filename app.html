@@ -1,243 +1,223 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BG Pro V24 - Native Fix</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BG Pro - Tony Nguyen</title>
 
-    <link rel="manifest" id="my-manifest">
-    <script>
-        const manifest = { "name": "BG Pro", "short_name": "BG Pro", "start_url": ".", "display": "standalone", "background_color": "#12161c", "theme_color": "#1e2329", "icons": [{ "src": "https://bin.bnbstatic.com/static/images/common/favicon.ico", "sizes": "192x192", "type": "image/png" }] };
-        document.querySelector('#my-manifest').setAttribute('href', URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'})));
-    </script>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css">
-    <link rel="stylesheet" href="css/toast.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/toast.css">
+    
+    <style>
+        /* CSS bổ sung để đảm bảo Ví hiện đẹp */
+        .wallet-card { background: linear-gradient(135deg, #fcd535 0%, #f7931a 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: #181a20; }
+        .coin-row { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #2b3139; color: #eaecef; }
+        .coin-name { font-weight: 700; font-size: 16px; }
+        .coin-val { font-weight: 600; text-align: right; }
+        .coin-sub { font-size: 12px; color: #848e9c; text-align: right; }
+    </style>
 </head>
 <body>
 
-    <div id="view-home" class="view-section active">
-        <div class="app-header">
-            <div style="font-weight:bold; display:flex; align-items:center; gap:10px;">
-                <img src="https://bin.bnbstatic.com/static/images/common/favicon.ico" class="app-logo" style="width:30px;height:30px;" onclick="window.location.reload()">
-                <div>
-                    <span id="user-name-home">Guest</span>
-                </div>
-            </div>
-            <div style="display:flex; gap:15px; align-items:center;">
-                <i class="fas fa-bell" style="font-size:20px;" onclick="openNoti()"></i>
-                <i class="fas fa-user-circle" style="font-size:24px; color:var(--text-primary);" onclick="openProfile()"></i>
-            </div>
-        </div>
-        <div class="asset-card">
-            <div style="font-size:12px;">Tổng tài sản (USDT)</div>
-            <div class="total-balance" id="home-total">0.00 $</div>
-            <div style="font-size:12px;">Lãi/Lỗ: <span id="home-pnl-val" style="font-weight:bold;">0.00 $</span></div>
-        </div>
-        <div class="quick-actions">
-            <div class="action-btn" onclick="fakeAction('Nạp')"><i class="fas fa-arrow-down"></i>Nạp</div>
-            <div class="action-btn" onclick="fakeAction('Rút')"><i class="fas fa-arrow-up"></i>Rút</div>
-            <div class="action-btn" onclick="showToast('Tính năng đang bảo trì', 'info')"><i class="fas fa-exchange-alt"></i>Chuyển</div>
-            <div class="action-btn" onclick="switchTab('assets', 3)"><i class="fas fa-history"></i>Lịch sử</div>
-        </div>
-        <div id="home-list" style="padding-bottom: 20px;"></div>
-    </div>
+    <div id="view-home" class="view-section active">
+        <div class="app-header">
+            <div style="font-weight:bold; display:flex; align-items:center; gap:10px;">
+                <img src="https://bin.bnbstatic.com/static/images/common/favicon.ico" class="app-logo" style="width:30px;height:30px;" onclick="window.location.reload()">
+                <div>
+                    <span id="user-name-home">Tony Nguyen</span>
+                    <i class="fas fa-check-circle" style="color:#fcd535; font-size:12px;"></i>
+                </div>
+            </div>
+            <div style="display:flex; gap:15px; align-items:center;">
+                <i class="fas fa-bell" style="font-size:20px;"></i>
+                <i class="fas fa-user-circle" style="font-size:24px; color:var(--text-primary);"></i>
+            </div>
+        </div>
+        
+        <div class="asset-card">
+            <div style="font-size:12px;">Tổng tài sản ước tính (USDT)</div>
+            <div class="total-balance" id="home-total">Loading...</div>
+            <div style="font-size:12px;">Lãi/Lỗ hôm nay: <span id="home-pnl-val" style="font-weight:bold; color: #0ecb81;">+0.00 $</span></div>
+        </div>
 
-    <div id="view-markets" class="view-section">
-        <div class="app-header">Thị trường <i class="fas fa-search" style="float:right"></i></div>
-        <div id="market-full-list"></div>
-    </div>
-
-    <div id="view-trade" class="view-section">
-        <div class="app-header">
-            <div onclick="openCoinMenu()" style="font-size:18px; font-weight:bold;"><i class="fas fa-bars"></i> <span id="trade-pair">BTC/USDT</span> <span id="trade-change" style="font-size:12px;">+0.00%</span></div>
-            <div onclick="toggleChart()" style="font-size:12px; padding:6px 12px; background:#333; border-radius:4px;"><i class="fas fa-chart-line"></i> Chart</div>
-        </div>
-        <div id="chart-container"></div>
-        <div class="trade-layout">
-            <div class="col-left">
-                <div style="display:flex; justify-content:space-between; padding:0 5px; font-size:10px; color:var(--text-secondary);"><span>Giá</span><span>SL</span></div>
-                <div id="asks-box" style="flex:1; display:flex; flex-direction:column-reverse; overflow:hidden;"></div>
-                <div style="text-align:center; font-size:18px; font-weight:700; color:var(--green); padding:8px 0;" id="trade-price">---</div>
-                <div id="bids-box" style="flex:1; overflow:hidden;"></div>
-            </div>
-            <div class="col-right">
-                <div style="display:flex; gap:10px;">
-                    <div class="type-btn active-buy" id="btn-buy" onclick="setTradeMode('buy')">Mua</div>
-                    <div class="type-btn" id="btn-sell" onclick="setTradeMode('sell')">Bán</div>
-                </div>
-                <div style="margin-top:10px;"><input type="text" id="inp-price" class="input-box" readonly placeholder="Giá"></div>
-                <div style="margin-top:10px;"><input type="number" id="inp-amt" class="input-box" placeholder="Số lượng" oninput="calcTotal()"></div>
-                <div style="margin-top:5px; font-size:11px; text-align:right;">Phí (0.1%): <span id="trade-fee" style="color:var(--text-secondary);">0.00 $</span></div>
-                <div style="margin-top:2px; font-size:11px; text-align:right;">Tổng: <span id="trade-total" style="color:white; font-weight:bold;">0.00 $</span></div>
-                <div style="font-size:12px; text-align:right; margin-top:10px; color:#888;">Khả dụng: <span id="avail-trade" style="color:var(--gold); font-weight:bold;">---</span></div>
-                <button class="btn-action" id="btn-action" style="background:var(--green)" onclick="doTrade()">MUA NGAY</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="view-assets" class="view-section">
-        <div class="app-header">Ví của tôi</div>
-        <div class="asset-card">
-            <div style="font-size:12px;">Tổng giá trị ước tính</div>
-            <div class="total-balance" id="asset-total">0.00 $</div>
-        </div>
-        <div class="quick-actions">
-            <div class="action-btn" onclick="fakeAction('Nạp')"><i class="fas fa-arrow-down"></i>Nạp</div>
-            <div class="action-btn" onclick="fakeAction('Rút')"><i class="fas fa-arrow-up"></i>Rút</div>
-            <div class="action-btn" onclick="showToast('Tính năng đang bảo trì', 'info')"><i class="fas fa-exchange-alt"></i>Chuyển</div>
-            <div class="action-btn" onclick="window.location.reload()"><i class="fas fa-sync-alt"></i>Reset</div>
-        </div>
-        <div id="asset-list"></div>
-    </div>
-
-    <div id="user-modal" onclick="openProfile()">
-        <div class="profile-content" onclick="event.stopPropagation()">
-            <div style="text-align:center;margin-bottom:20px;">
-                <i class="fas fa-user-circle" style="font-size:60px;color:#fcd535"></i>
-                <div id="modal-email" style="font-weight:bold;margin-top:10px;">...</div>
-                <div id="kyc-badge-modal" style="margin-top:10px;">
-                    <button onclick="verifyIdentity()" id="btn-kyc" style="background:#333; border:1px solid #555; color:white; padding:5px 10px; border-radius:4px;">Xác minh danh tính (KYC)</button>
-                </div>
-            </div>
-            <div class="wallet-section">
-    <div class="balance-card" style="background: linear-gradient(135deg, #fcd535 0%, #f7931a 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-        <p style="margin: 0; color: #181a20; font-size: 14px; font-weight: 500;">Tổng giá trị ước tính</p>
-        <h1 id="total-balance" style="margin: 5px 0 0 0; color: #181a20; font-size: 32px; font-weight: 700;">$0.00</h1>
+        <div class="quick-actions">
+            <div class="action-btn"><i class="fas fa-arrow-down"></i>Nạp</div>
+            <div class="action-btn"><i class="fas fa-arrow-up"></i>Rút</div>
+            <div class="action-btn"><i class="fas fa-exchange-alt"></i>Chuyển</div>
+            <div class="action-btn"><i class="fas fa-history"></i>Lịch sử</div>
+        </div>
+        
+        <div style="padding: 15px;">
+            <h3 style="color:white; margin:0 0 10px 0;">Danh sách quan tâm</h3>
+            <div id="home-market-list">Đang tải dữ liệu thị trường...</div>
+        </div>
     </div>
 
-    <div class="coin-list">
-        <div class="coin-item" style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #2b3139;">
-            <div class="left">
-                <span style="font-weight: 700; color: #eaecef;">USDT</span>
-            </div>
-            <div class="right" style="text-align: right;">
-                <div id="usdt-balance" style="color: #eaecef; font-weight: 600;">10000.00</div>
-                <div style="color: #848e9c; font-size: 12px;">$10,000.00</div>
-            </div>
-        </div>
+    <div id="view-markets" class="view-section">
+        <div class="app-header">Thị trường <i class="fas fa-search" style="float:right"></i></div>
+        <div id="market-full-list" style="padding:10px; color:#848e9c;">Dữ liệu đang được đồng bộ...</div>
+    </div>
 
-        <div class="coin-item" style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #2b3139;">
-            <div class="left">
-                <span style="font-weight: 700; color: #eaecef;">BTC</span>
-            </div>
-            <div class="right" style="text-align: right;">
-                <div id="btc-balance" style="color: #eaecef; font-weight: 600;">0.5000</div>
-                <div id="btc-value" style="color: #848e9c; font-size: 12px;">Waiting...</div>
-            </div>
+    <div id="view-trade" class="view-section">
+        <div class="app-header">
+            <div style="font-size:18px; font-weight:bold;"><i class="fas fa-bars"></i> BTC/USDT <span style="font-size:12px; color:#0ecb81;">+2.45%</span></div>
         </div>
-
-        <div class="coin-item" style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #2b3139;">
-            <div class="left">
-                <span style="font-weight: 700; color: #eaecef;">ETH</span>
+        <div id="chart-container" style="height: 350px; background: #12161c;"></div>
+        
+        <div class="trade-layout" style="display:flex; padding:10px; gap:10px;">
+            <div style="flex:1; color:white;">
+                <div style="color:#f6465d; font-size:14px;">96,540.21</div>
+                <div style="color:#f6465d; font-size:14px;">96,540.00</div>
+                <div style="font-size:20px; color:#0ecb81; margin:10px 0;" id="trade-price">96,538.00</div>
+                <div style="color:#0ecb81; font-size:14px;">96,535.12</div>
             </div>
-            <div class="right" style="text-align: right;">
-                <div id="eth-balance" style="color: #eaecef; font-weight: 600;">2.0000</div>
-                <div id="eth-value" style="color: #848e9c; font-size: 12px;">Waiting...</div>
+            <div style="flex:1;">
+                <button style="width:100%; background:#0ecb81; color:white; padding:10px; border:none; border-radius:4px; font-weight:bold;">MUA</button>
+                <input type="number" placeholder="Giá (USDT)" style="width:100%; margin-top:10px; padding:8px; background:#2b3139; border:1px solid #474d57; color:white;">
+                <input type="number" placeholder="Số lượng" style="width:100%; margin-top:10px; padding:8px; background:#2b3139; border:1px solid #474d57; color:white;">
             </div>
         </div>
     </div>
-</div>
-        <div class="nav-item" onclick="switchTab('trade', 2)"><i class="fas fa-exchange-alt"></i></div>
-        <div class="nav-item" onclick="switchTab('assets', 3)"><i class="fas fa-wallet"></i></div>
-    </div>
 
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-    <script src="js/ui.js"></script>
-    <script type="module" src="js/app.js"></script>
-<script>
-    // 1. CẤU HÌNH SỐ DƯ (Lấy từ Login hoặc mặc định)
-    // Đây là nơi anh chỉnh số coin anh muốn hiển thị
-    const myWallet = {
-        USDT: 10000.00,
-        BTC: 0.5,
-        ETH: 2.0
-    };
-
-    // 2. KẾT NỐI WEBSOCKET BINANCE (Lấy giá siêu nhanh)
-    const ws = new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
-
-    // Biến lưu giá hiện tại
-    let currentPrices = {
-        BTCUSDT: 0,
-        ETHUSDT: 0
-    };
-
-    // Khi có dữ liệu mới từ sàn trả về
-    ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
+    <div id="view-assets" class="view-section">
+        <div class="app-header">Ví Spot</div>
         
-        // Lọc lấy giá BTC và ETH
-        data.forEach(ticker => {
-            if (ticker.s === 'BTCUSDT') currentPrices.BTCUSDT = parseFloat(ticker.c);
-            if (ticker.s === 'ETHUSDT') currentPrices.ETHUSDT = parseFloat(ticker.c);
-        });
+        <div style="padding: 15px;">
+            <div class="wallet-card">
+                <div style="font-size:14px; opacity:0.8;">Tổng số dư quy đổi</div>
+                <div id="total-balance" style="font-size:32px; font-weight:700; margin-top:5px;">Loading...</div>
+                <div style="font-size:12px; margin-top:5px;">~ ₫ <span id="vnd-balance">---</span></div>
+            </div>
 
-        // Cập nhật giao diện ngay lập tức
-        updateUI();
-    };
+            <div class="quick-actions" style="margin-bottom:20px;">
+                <div class="action-btn"><i class="fas fa-plus-circle"></i>Nạp</div>
+                <div class="action-btn"><i class="fas fa-minus-circle"></i>Rút</div>
+                <div class="action-btn"><i class="fas fa-exchange-alt"></i>Chuyển</div>
+            </div>
 
-    // 3. HÀM TÍNH TOÁN VÀ HIỂN THỊ (Logic fix lỗi lệch giá)
-    function updateUI() {
-        // Nếu chưa có giá thì chưa tính
-        if (currentPrices.BTCUSDT === 0) return;
+            <h3 style="color:white; margin-bottom:10px;">Tài sản</h3>
+            
+            <div class="coin-row">
+                <div class="left"><div class="coin-name" style="color:#0ecb81;">USDT</div></div>
+                <div class="right">
+                    <div class="coin-val">10,000.00</div>
+                    <div class="coin-sub">$10,000.00</div>
+                </div>
+            </div>
 
-        // Tính giá trị từng coin
-        const btcVal = myWallet.BTC * currentPrices.BTCUSDT;
-        const ethVal = myWallet.ETH * currentPrices.ETHUSDT;
-        const totalVal = myWallet.USDT + btcVal + ethVal;
+            <div class="coin-row">
+                <div class="left"><div class="coin-name" style="color:#f7931a;">BTC</div></div>
+                <div class="right">
+                    <div class="coin-val" id="btc-balance">0.5000</div>
+                    <div class="coin-sub" id="btc-value">Waiting...</div>
+                </div>
+            </div>
 
-        // Hiển thị số dư Coin
-        document.getElementById('btc-balance').innerText = myWallet.BTC.toFixed(4);
-        document.getElementById('eth-balance').innerText = myWallet.ETH.toFixed(4);
+            <div class="coin-row">
+                <div class="left"><div class="coin-name" style="color:#627eea;">ETH</div></div>
+                <div class="right">
+                    <div class="coin-val" id="eth-balance">2.0000</div>
+                    <div class="coin-sub" id="eth-value">Waiting...</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // Hiển thị giá trị quy đổi ($) - FIX LỖI 0.00 $
-        document.getElementById('btc-value').innerText = `$${btcVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        document.getElementById('eth-value').innerText = `$${ethVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('home')"><i class="fas fa-home"></i></div>
+        <div class="nav-item" onclick="switchTab('markets')"><i class="fas fa-chart-line"></i></div>
+        <div class="nav-item" onclick="switchTab('trade')"><i class="fas fa-exchange-alt"></i></div>
+        <div class="nav-item" onclick="switchTab('assets')"><i class="fas fa-wallet"></i></div>
+    </div>
 
-        // Hiển thị TỔNG TÀI SẢN (Số to đùng màu vàng)
-        document.getElementById('total-balance').innerText = `$${totalVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        
-        // Cập nhật luôn title trang web cho chuyên nghiệp
-        document.title = `BTC: $${currentPrices.BTCUSDT} | BG WEALTH`;
-    }
-
-    // 4. FIX BIỂU ĐỒ (TradingView Widget)
-    // Tự động chèn biểu đồ vào khung nếu đang bị đen
-    function initChart() {
-        const chartContainer = document.querySelector('.chart-area') || document.getElementById('chart-container');
-        if (chartContainer) {
-            chartContainer.innerHTML = ''; // Xóa cái khung đen cũ đi
-            const script = document.createElement('script');
-            script.src = 'https://s3.tradingview.com/tv.js';
-            script.onload = () => {
-                new TradingView.widget({
-                    "width": "100%",
-                    "height": 400,
-                    "symbol": "BINANCE:BTCUSDT",
-                    "interval": "D",
-                    "timezone": "Etc/UTC",
-                    "theme": "dark",
-                    "style": "1",
-                    "locale": "vi_VN",
-                    "toolbar_bg": "#f1f3f6",
-                    "enable_publishing": false,
-                    "hide_side_toolbar": false,
-                    "allow_symbol_change": true,
-                    "container_id": chartContainer.id || "tradingview_chart"
-                });
-            };
-            document.head.appendChild(script);
+    <script src="js/ui.js"></script> <script>
+        // --- LOGIC CHUYỂN TAB CƠ BẢN (Phòng trường hợp file ui.js lỗi) ---
+        function switchTab(tabName) {
+            // Ẩn hết các view
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // Hiện view được chọn
+            document.getElementById('view-' + tabName).classList.add('active');
+            
+            // Active icon menu (Logic đơn giản)
+            if(tabName === 'home') document.querySelectorAll('.nav-item')[0].classList.add('active');
+            if(tabName === 'markets') document.querySelectorAll('.nav-item')[1].classList.add('active');
+            if(tabName === 'trade') {
+                document.querySelectorAll('.nav-item')[2].classList.add('active');
+                initChart(); // Vẽ biểu đồ khi vào tab Trade
+            }
+            if(tabName === 'assets') document.querySelectorAll('.nav-item')[3].classList.add('active');
         }
-    }
 
-    // Chạy fix biểu đồ sau 1 giây
-    setTimeout(initChart, 1000);
+        // --- CẤU HÌNH TÀI SẢN ---
+        const myWallet = { USDT: 10000.00, BTC: 0.5, ETH: 2.0 };
 
-</script>
+        // --- KẾT NỐI SÀN (WEBSOCKET) ---
+        const ws = new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
+        let currentPrices = { BTCUSDT: 0, ETHUSDT: 0 };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            data.forEach(ticker => {
+                if (ticker.s === 'BTCUSDT') currentPrices.BTCUSDT = parseFloat(ticker.c);
+                if (ticker.s === 'ETHUSDT') currentPrices.ETHUSDT = parseFloat(ticker.c);
+            });
+            updateAllScreens();
+        };
+
+        // --- HÀM CẬP NHẬT GIAO DIỆN ---
+        function updateAllScreens() {
+            if (currentPrices.BTCUSDT === 0) return;
+
+            // Tính toán
+            const btcVal = myWallet.BTC * currentPrices.BTCUSDT;
+            const ethVal = myWallet.ETH * currentPrices.ETHUSDT;
+            const totalVal = myWallet.USDT + btcVal + ethVal;
+            const totalString = `$${totalVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+            // Cập nhật Trang chủ
+            const elHomeTotal = document.getElementById('home-total');
+            const elHomePnl = document.getElementById('home-pnl-val');
+            const elTradePrice = document.getElementById('trade-price');
+            
+            if(elHomeTotal) elHomeTotal.innerText = totalString;
+            if(elHomePnl) {
+                const pnl = totalVal - 50000; 
+                elHomePnl.innerText = `${pnl >= 0 ? "+" : ""}${pnl.toLocaleString('en-US', {minimumFractionDigits: 2})} $`;
+            }
+            // Giá ở tab Trade cũng nhảy theo
+            if(elTradePrice) elTradePrice.innerText = currentPrices.BTCUSDT.toLocaleString('en-US', {minimumFractionDigits: 2});
+
+            // Cập nhật Trang Ví
+            document.getElementById('total-balance').innerText = totalString;
+            document.getElementById('btc-value').innerText = `$${btcVal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById('eth-value').innerText = `$${ethVal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            
+            // Cập nhật VNĐ (Tỉ giá tạm tính 25,400)
+            document.getElementById('vnd-balance').innerText = (totalVal * 25400).toLocaleString('vi-VN');
+        }
+
+        // --- FIX BIỂU ĐỒ ---
+        function initChart() {
+            const container = document.getElementById('chart-container');
+            if(container && container.innerHTML === "") {
+                const script = document.createElement('script');
+                script.src = 'https://s3.tradingview.com/tv.js';
+                script.onload = () => {
+                    new TradingView.widget({
+                        "width": "100%", "height": 350, "symbol": "BINANCE:BTCUSDT",
+                        "interval": "D", "timezone": "Etc/UTC", "theme": "dark",
+                        "style": "1", "locale": "vi_VN", "toolbar_bg": "#f1f3f6",
+                        "enable_publishing": false, "hide_side_toolbar": false,
+                        "allow_symbol_change": true, "container_id": "chart-container"
+                    });
+                };
+                document.head.appendChild(script);
+            }
+        }
+    </script>
 </body>
 </html>
