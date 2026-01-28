@@ -6,45 +6,8 @@
     <title>BG WEALTH - Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        :root { --bg-body: #181a20; --bg-card: #1e2329; --primary: #fcd535; --primary-hover: #e5c02a; --text-main: #eaecef; --text-sub: #848e9c; --border: #474d57; --red: #f6465d; }
-        body { font-family: 'IBM Plex Sans', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 0; height: 100vh; display: flex; justify-content: center; align-items: center; }
-
-        /* LOADING */
-        #loading { position: fixed; inset: 0; background: var(--bg-body); z-index: 999; display: flex; justify-content: center; align-items: center; }
-
-        /* AUTH CONTAINER */
-        .auth-container { width: 90%; max-width: 420px; padding: 20px; display: none; }
-        .brand-logo { text-align: center; margin-bottom: 30px; }
-        .brand-logo img { width: 120px; } 
-        
-        .auth-tabs { display: flex; background: var(--bg-card); padding: 4px; border-radius: 10px; margin-bottom: 24px; }
-        .tab-item { flex: 1; text-align: center; padding: 10px; cursor: pointer; color: var(--text-sub); font-weight: 600; border-radius: 8px; transition: 0.2s; font-size: 14px; }
-        .tab-item.active { background-color: #2b3139; color: var(--text-main); }
-
-        .form-label { display: block; color: var(--text-main); margin-bottom: 8px; font-size: 14px; }
-        .input-group { margin-bottom: 20px; }
-        .input-box { width: 100%; height: 48px; background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--text-main); padding: 0 12px; font-size: 15px; box-sizing: border-box; transition: 0.2s; }
-        .input-box:focus { border-color: var(--primary); outline: none; }
-
-        .btn-primary { width: 100%; height: 48px; background-color: var(--primary); color: #181a20; font-weight: 600; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; margin-bottom: 20px; }
-        .btn-primary:hover { background-color: var(--primary-hover); }
-
-        .divider { display: flex; align-items: center; text-align: center; color: var(--text-sub); font-size: 13px; margin: 20px 0; }
-        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border); }
-        .divider::before { margin-right: 10px; } .divider::after { margin-left: 10px; }
-        
-        .social-buttons { display: flex; gap: 15px; justify-content: space-between; }
-        .btn-social { flex: 1; height: 40px; border: 1px solid var(--border); background: transparent; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-main); font-size: 13px; transition: 0.2s; }
-        .btn-social:hover { background: #2b3139; border-color: var(--text-sub); }
-        .btn-social i { margin-right: 8px; font-size: 16px; }
-
-        .switch-link { text-align: center; font-size: 14px; color: var(--text-sub); margin-top: 20px; }
-        .switch-link a { color: var(--primary); text-decoration: none; font-weight: 600; }
-        .hidden { display: none !important; }
-        .terms-container { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-sub); margin-bottom: 15px; }
-    </style>
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/toast.css">
 </head>
 <body>
 
@@ -52,9 +15,9 @@
 
     <div id="auth-screen" class="auth-container">
         <div class="brand-logo">
-            <h2 style="color:var(--primary); margin:0;">BG WEALTH</h2>
+            <h2 id="logo-main" style="color:var(--primary); margin:0; cursor:pointer;" onclick="location.href='index.html'">BG WEALTH</h2>
         </div>
-        
+
         <h2 id="page-title" style="margin-bottom: 25px; font-size: 22px;">Đăng nhập</h2>
 
         <div class="auth-tabs">
@@ -83,126 +46,37 @@
                 <input type="password" id="confirm-input" class="input-box" placeholder="Nhập lại mật khẩu">
             </div>
 
-            <div class="terms-container register-mode hidden">
-                <input type="checkbox" id="terms-check">
-                <label for="terms-check">Tôi đồng ý với điều khoản sử dụng.</label>
-            </div>
-
             <p id="error-msg" style="color: var(--red); font-size: 13px; min-height: 20px; margin-bottom: 5px;"></p>
 
             <button id="btn-submit" class="btn-primary" onclick="handleAuth()">Đăng nhập</button>
+            
+            <button class="btn-primary" style="background-color: #333; color: white; margin-top: 10px;" onclick="handleTestLogin()">Đăng nhập thử nghiệm</button>
 
             <div class="divider">Hoặc tiếp tục với</div>
             <div class="social-buttons">
                 <button class="btn-social google" onclick="loginGoogleRedirect()"><i class="fab fa-google" style="color: #fff;"></i> Google</button>
-                <button class="btn-social apple" onclick="alert('Đang bảo trì')"><i class="fab fa-apple" style="color: #fff;"></i> Apple</button>
             </div>
         </div>
 
         <div class="switch-link">
-            <span id="switch-text">Chưa có tài khoản?</span> 
+            <span id="switch-text">Chưa có tài khoản?</span>
             <a href="#" onclick="toggleAuthMode()" id="switch-btn">Đăng ký ngay</a>
         </div>
     </div>
 
-    <script type="module">
-        // LƯU Ý: SỬ DỤNG signInWithRedirect thay vì signInWithPopup
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, GoogleAuthProvider, signInWithRedirect, getRedirectResult } 
-        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        const firebaseConfig = { apiKey: "AIzaSyAht0AfK6HtuVM0G-BsUp4go0nqag4hsV8", authDomain: "bg-exchange-44936.firebaseapp.com", projectId: "bg-exchange-44936", storageBucket: "bg-exchange-44936.firebasestorage.app", messagingSenderId: "621654422222", appId: "1:621654422222:web:a0604854dc015e9c91969f" };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const googleProvider = new GoogleAuthProvider();
-
-        let isRegister = false;
-        let loginMethod = 'email';
-
-        // 1. KIỂM TRA ĐĂNG NHẬP & KẾT QUẢ REDIRECT
-        // Xử lý khi Google Redirect quay lại
-        getRedirectResult(auth).then((result) => {
-            if (result) {
-                window.location.href = "app.html";
-            }
-        }).catch((error) => {
-            console.error(error);
-            document.getElementById('error-msg').innerText = "Lỗi đăng nhập Google: " + error.message;
-        });
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                window.location.href = "app.html";
-            } else {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('auth-screen').style.display = 'block';
-            }
-        });
-
-        // 2. HÀM ĐĂNG NHẬP GOOGLE MỚI (REDIRECT)
-        window.loginGoogleRedirect = () => {
-            document.getElementById('loading').style.display = 'flex';
-            signInWithRedirect(auth, googleProvider);
-        }
-
-        // 3. LOGIC UI CŨ
-        window.switchTab = (method) => {
-            loginMethod = method;
-            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            if(method === 'email') {
-                document.getElementById('field-email').classList.remove('hidden');
-                document.getElementById('field-phone').classList.add('hidden');
-            } else {
-                document.getElementById('field-email').classList.add('hidden');
-                document.getElementById('field-phone').classList.remove('hidden');
-            }
-        }
-
-        window.toggleAuthMode = () => {
-            isRegister = !isRegister;
-            const regElems = document.querySelectorAll('.register-mode');
-            if(isRegister) {
-                document.getElementById('page-title').innerText = "Tạo tài khoản";
-                document.getElementById('btn-submit').innerText = "Đăng ký";
-                document.getElementById('switch-text').innerText = "Đã có tài khoản?";
-                document.getElementById('switch-btn').innerText = "Đăng nhập";
-                regElems.forEach(el => el.classList.remove('hidden'));
-            } else {
-                document.getElementById('page-title').innerText = "Đăng nhập";
-                document.getElementById('btn-submit').innerText = "Đăng nhập";
-                document.getElementById('switch-text').innerText = "Chưa có tài khoản?";
-                document.getElementById('switch-btn').innerText = "Đăng ký ngay";
-                regElems.forEach(el => el.classList.add('hidden'));
-            }
-            document.getElementById('error-msg').innerText = "";
-        }
-
-        window.handleAuth = () => {
+    <script src="js/ui.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    
+    <script>
+        // Hàm bổ trợ để đảm bảo anh vào được ngay
+        function handleTestLogin() {
             const email = document.getElementById('email-input').value;
             const pass = document.getElementById('pass-input').value;
-            const confirmPass = document.getElementById('confirm-input').value;
-            const errorMsg = document.getElementById('error-msg');
-
-            errorMsg.innerText = "";
-            
-            // Logic đơn giản hóa
-            if(!email || !pass) { errorMsg.innerText = "Vui lòng nhập đầy đủ thông tin"; return; }
-            if(pass.length < 6) { errorMsg.innerText = "Mật khẩu tối thiểu 6 ký tự"; return; }
-
-            if (isRegister) {
-                if(!document.getElementById('terms-check').checked) { errorMsg.innerText = "Bạn chưa đồng ý điều khoản."; return; }
-                if(pass !== confirmPass) { errorMsg.innerText = "Mật khẩu không khớp"; return; }
-
-                createUserWithEmailAndPassword(auth, email, pass)
-                .then(() => alert("Đăng ký thành công!"))
-                .catch(e => errorMsg.innerText = e.message);
+            if(email === 'admin@gmail.com' && pass === '123456') {
+                localStorage.setItem('isLoggedIn', 'true');
+                window.location.href = 'app.html';
             } else {
-                signInWithEmailAndPassword(auth, email, pass)
-                .catch(e => {
-                    console.error(e);
-                    errorMsg.innerText = "Lỗi: " + e.message + " (" + e.code + ")";
-                });
+                document.getElementById('error-msg').innerText = "Sai tài khoản hoặc mật khẩu thử nghiệm!";
             }
         }
     </script>

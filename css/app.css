@@ -1,0 +1,48 @@
+:root { --bg-body: #12161c; --bg-card: #1e2329; --green: #0ecb81; --red: #f6465d; --text-primary: #eaecef; --text-secondary: #848e9c; --border: #2b3139; --gold: #fcd535; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+body { margin: 0; padding: 0; font-family: 'Roboto', sans-serif; background: var(--bg-body); color: var(--text-primary); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+.view-section { flex: 1; overflow-y: auto; display: none; padding-bottom: 70px; }
+.view-section.active { display: block; }
+
+/* UI COMPONENTS */
+.app-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--bg-body); position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--border); }
+.asset-card { background: linear-gradient(135deg, #fcd535 0%, #f7931a 100%); color: #1e2329; padding: 20px; margin: 15px; border-radius: 12px; }
+.total-balance { font-size: 32px; font-weight: 700; margin: 5px 0; }
+.quick-actions { display: flex; justify-content: space-between; padding: 0 15px; margin-bottom: 20px; gap: 10px; }
+.action-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; background: var(--bg-card); padding: 12px 5px; border-radius: 8px; font-size: 11px; color: var(--text-primary); border: 1px solid var(--border); cursor: pointer; }
+.action-btn:active { background: #333; }
+.action-btn i { font-size: 18px; color: var(--gold); }
+
+.coin-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.coin-logo { width: 30px; height: 30px; border-radius: 50%; background: #333; margin-right: 12px; object-fit: cover; }
+
+/* TRADE UI */
+.trade-layout { display: flex; flex: 1; min-height: 400px; }
+.col-left { width: 42%; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 5px 0; }
+.col-right { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.ob-row { display: flex; justify-content: space-between; padding: 1px 5px; font-size: 11px; }
+.type-btn { flex: 1; text-align: center; padding: 10px; font-weight: 700; cursor: pointer; opacity: 0.5; background: var(--bg-card); border-radius: 4px; }
+.active-buy { background: var(--green); color: white; opacity: 1; }
+.active-sell { background: var(--red); color: white; opacity: 1; }
+.input-box { width: 100%; background: var(--border); border: none; padding: 12px; color: white; border-radius: 4px; text-align: right; font-weight:bold; font-size: 16px; }
+.btn-action { width: 100%; padding: 14px; border: none; font-weight: bold; color: white; border-radius: 4px; font-size: 16px; margin-top: 10px; }
+
+/* MODALS */
+#user-modal, #noti-panel, #coin-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 200; display: none; flex-direction: column; }
+.profile-content { background: #1e2329; padding: 25px; border-radius: 20px 20px 0 0; margin-top: auto; }
+.btn-logout { width: 100%; padding: 15px; margin-top: 20px; background: #2b3139; color: var(--red); border: none; font-weight: bold; border-radius: 8px; }
+
+.bottom-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: var(--bg-body); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 90; }
+.nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: var(--text-secondary); cursor: pointer; width: 25%; height: 100%; justify-content: center; }
+.nav-item.active { color: var(--gold); }
+.nav-item i { font-size: 22px; margin-bottom: 4px; }
+
+#chart-container { height: 300px; border-bottom: 1px solid var(--border); display: none; width: 100%; background: #12161c; }
+
+/* NEW STYLES */
+.wallet-table th { color: var(--text-secondary); font-weight: 500; font-size: 12px; padding: 10px; text-align: right; }
+.wallet-table th:first-child { text-align: left; }
+.wallet-table td { padding: 12px 10px; font-size: 14px; }
+
+.app-logo { border-radius: 50%; border: 1px solid var(--gold); }
