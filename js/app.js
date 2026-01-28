@@ -457,19 +457,18 @@ fetchPrices(); setInterval(fetchPrices, 5000); // Polling backup
 
 // Socket Realtime
 try {
-    // Use !ticker@arr instead of !miniTicker@arr to get 24h Change % (P)
-    const ws = new WebSocket("wss://stream.binance.com:443/ws/!ticker@arr");
+    // Use port 9443 and !ticker@arr as requested
+    const ws = new WebSocket("wss://stream.binance.com:9443/ws/!ticker@arr");
     ws.onopen = () => console.log("Connected to Binance WebSocket");
     ws.onmessage = (e) => {
         const data = JSON.parse(e.data);
         data.forEach(d => {
             if(d.s.endsWith('USDT')) {
                 const s = d.s.replace('USDT','');
+                // Sync price to single source of truth: coinPrices
                 if(coins.includes(s)) updatePrice(s, parseFloat(d.c), parseFloat(d.P));
             }
         });
-        // Force wallet update periodically or on specific significant changes
-        // But updatePrice already calls updateTotalBalanceOnly()
     };
     ws.onerror = (e) => console.log("WebSocket Error:", e);
 } catch(e) {
