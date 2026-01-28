@@ -1,110 +1,155 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BG Pro V24 - Native Fix</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BG Pro V24 - Native Fix</title>
 
-    <link rel="manifest" id="my-manifest">
-    <script>
-        const manifest = { "name": "BG Pro", "short_name": "BG Pro", "start_url": ".", "display": "standalone", "background_color": "#12161c", "theme_color": "#1e2329", "icons": [{ "src": "https://bin.bnbstatic.com/static/images/common/favicon.ico", "sizes": "192x192", "type": "image/png" }] };
-        document.querySelector('#my-manifest').setAttribute('href', URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'})));
-    </script>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" id="my-manifest">
+    <script>
+        const manifest = { "name": "BG Pro", "short_name": "BG Pro", "start_url": ".", "display": "standalone", "background_color": "#12161c", "theme_color": "#1e2329", "icons": [{ "src": "https://bin.bnbstatic.com/static/images/common/favicon.ico", "sizes": "192x192", "type": "image/png" }] };
+        document.querySelector('#my-manifest').setAttribute('href', URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'})));
+    </script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css">
-    <link rel="stylesheet" href="css/toast.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/toast.css">
 </head>
 <body>
 
-    <div id="view-home" class="view-section active">
-        <div class="app-header">
-            <div style="font-weight:bold; display:flex; align-items:center; gap:10px;">
-                <img src="https://bin.bnbstatic.com/static/images/common/favicon.ico" class="app-logo" style="width:30px;height:30px;" onclick="window.location.reload()">
-                <div>
-                    <span id="user-name-home">Guest</span>
-                </div>
-            </div>
-            <div style="display:flex; gap:15px; align-items:center;">
-                <i class="fas fa-bell" style="font-size:20px;" onclick="openNoti()"></i>
-                <i class="fas fa-user-circle" style="font-size:24px; color:var(--text-primary);" onclick="openProfile()"></i>
-            </div>
-        </div>
-        <div class="asset-card">
-            <div style="font-size:12px;">Tổng tài sản (USDT)</div>
-            <div class="total-balance" id="home-total">0.00 $</div>
-            <div style="font-size:12px;">Lãi/Lỗ: <span id="home-pnl-val" style="font-weight:bold;">0.00 $</span></div>
-        </div>
-        <div class="quick-actions">
-            <div class="action-btn" onclick="fakeAction('Nạp')"><i class="fas fa-arrow-down"></i>Nạp</div>
-            <div class="action-btn" onclick="fakeAction('Rút')"><i class="fas fa-arrow-up"></i>Rút</div>
-            <div class="action-btn" onclick="showToast('Tính năng đang bảo trì', 'info')"><i class="fas fa-exchange-alt"></i>Chuyển</div>
-            <div class="action-btn" onclick="switchTab('assets', 3)"><i class="fas fa-history"></i>Lịch sử</div>
-        </div>
-        <div id="home-list" style="padding-bottom: 20px;"></div>
+    <div id="view-home" class="view-section active">
+        <div class="app-header">
+            <div style="font-weight:bold; display:flex; align-items:center; gap:10px;">
+                <img src="https://bin.bnbstatic.com/static/images/common/favicon.ico" class="app-logo" style="width:30px;height:30px;" onclick="window.location.reload()">
+                <div>
+                    <span id="user-name-home">Guest</span>
+                </div>
+            </div>
+            <div style="display:flex; gap:15px; align-items:center;">
+                <i class="fas fa-bell" style="font-size:20px;" onclick="openNoti()"></i>
+                <i class="fas fa-user-circle" style="font-size:24px; color:var(--text-primary);" onclick="openProfile()"></i>
+            </div>
+        </div>
+        <div class="asset-card">
+            <div style="font-size:12px;">Tổng tài sản (USDT)</div>
+            <div class="total-balance" id="home-total">0.00 $</div>
+            <div style="font-size:12px;">Lãi/Lỗ: <span id="home-pnl-val" style="font-weight:bold;">0.00 $</span></div>
+        </div>
+        <div class="quick-actions">
+            <div class="action-btn" onclick="fakeAction('Nạp')"><i class="fas fa-arrow-down"></i>Nạp</div>
+            <div class="action-btn" onclick="fakeAction('Rút')"><i class="fas fa-arrow-up"></i>Rút</div>
+            <div class="action-btn" onclick="showToast('Tính năng đang bảo trì', 'info')"><i class="fas fa-exchange-alt"></i>Chuyển</div>
+            <div class="action-btn" onclick="switchTab('assets', 3)"><i class="fas fa-history"></i>Lịch sử</div>
+        </div>
+        <div id="home-list" style="padding-bottom: 20px;"></div>
+    </div>
+
+    <div id="view-markets" class="view-section">
+        <div class="app-header">Thị trường <i class="fas fa-search" style="float:right"></i></div>
+        <div id="market-full-list"></div>
+    </div>
+
+    <div id="view-trade" class="view-section">
+        <div class="app-header">
+            <div onclick="openCoinMenu()" style="font-size:18px; font-weight:bold;"><i class="fas fa-bars"></i> <span id="trade-pair">BTC/USDT</span> <span id="trade-change" style="font-size:12px;">+0.00%</span></div>
+            <div onclick="toggleChart()" style="font-size:12px; padding:6px 12px; background:#333; border-radius:4px;"><i class="fas fa-chart-line"></i> Chart</div>
+        </div>
+        <div id="chart-container"></div>
+        <div class="trade-layout">
+            <div class="col-left">
+                <div style="display:flex; justify-content:space-between; padding:0 5px; font-size:10px; color:var(--text-secondary);"><span>Giá</span><span>SL</span></div>
+                <div id="asks-box" style="flex:1; display:flex; flex-direction:column-reverse; overflow:hidden;"></div>
+                <div style="text-align:center; font-size:18px; font-weight:700; color:var(--green); padding:8px 0;" id="trade-price">---</div>
+                <div id="bids-box" style="flex:1; overflow:hidden;"></div>
+            </div>
+            <div class="col-right">
+                <div style="display:flex; gap:10px;">
+                    <div class="type-btn active-buy" id="btn-buy" onclick="setTradeMode('buy')">Mua</div>
+                    <div class="type-btn" id="btn-sell" onclick="setTradeMode('sell')">Bán</div>
+                </div>
+                <div style="margin-top:10px;"><input type="text" id="inp-price" class="input-box" readonly placeholder="Giá"></div>
+                <div style="margin-top:10px;"><input type="number" id="inp-amt" class="input-box" placeholder="Số lượng" oninput="calcTotal()"></div>
+                <div style="margin-top:5px; font-size:11px; text-align:right;">Phí (0.1%): <span id="trade-fee" style="color:var(--text-secondary);">0.00 $</span></div>
+                <div style="margin-top:2px; font-size:11px; text-align:right;">Tổng: <span id="trade-total" style="color:white; font-weight:bold;">0.00 $</span></div>
+                <div style="font-size:12px; text-align:right; margin-top:10px; color:#888;">Khả dụng: <span id="avail-trade" style="color:var(--gold); font-weight:bold;">---</span></div>
+                <button class="btn-action" id="btn-action" style="background:var(--green)" onclick="doTrade()">MUA NGAY</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-assets" class="view-section">
+        <div class="app-header">Ví của tôi</div>
+        <div class="asset-card">
+            <div style="font-size:12px;">Tổng giá trị ước tính</div>
+            <div class="total-balance" id="asset-total">0.00 $</div>
+        </div>
+        <div class="quick-actions">
+            <div class="action-btn" onclick="fakeAction('Nạp')"><i class="fas fa-arrow-down"></i>Nạp</div>
+            <div class="action-btn" onclick="fakeAction('Rút')"><i class="fas fa-arrow-up"></i>Rút</div>
+            <div class="action-btn" onclick="showToast('Tính năng đang bảo trì', 'info')"><i class="fas fa-exchange-alt"></i>Chuyển</div>
+            <div class="action-btn" onclick="window.location.reload()"><i class="fas fa-sync-alt"></i>Reset</div>
+        </div>
+        <div id="asset-list"></div>
+    </div>
+
+    <div id="user-modal" onclick="openProfile()">
+        <div class="profile-content" onclick="event.stopPropagation()">
+            <div style="text-align:center;margin-bottom:20px;">
+                <i class="fas fa-user-circle" style="font-size:60px;color:#fcd535"></i>
+                <div id="modal-email" style="font-weight:bold;margin-top:10px;">...</div>
+                <div id="kyc-badge-modal" style="margin-top:10px;">
+                    <button onclick="verifyIdentity()" id="btn-kyc" style="background:#333; border:1px solid #555; color:white; padding:5px 10px; border-radius:4px;">Xác minh danh tính (KYC)</button>
+                </div>
+            </div>
+            <div class="wallet-section">
+    <div class="balance-card" style="background: linear-gradient(135deg, #fcd535 0%, #f7931a 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+        <p style="margin: 0; color: #181a20; font-size: 14px; font-weight: 500;">Tổng giá trị ước tính</p>
+        <h1 id="total-balance" style="margin: 5px 0 0 0; color: #181a20; font-size: 32px; font-weight: 700;">$0.00</h1>
     </div>
 
-    <div id="view-markets" class="view-section">
-        <div class="app-header">Thị trường <i class="fas fa-search" style="float:right"></i></div>
-        <div id="market-full-list"></div>
-    </div>
-
-    <div id="view-trade" class="view-section">
-        <div class="app-header">
-            <div onclick="openCoinMenu()" style="font-size:18px; font-weight:bold;"><i class="fas fa-bars"></i> <span id="trade-pair">BTC/USDT</span> <span id="trade-change" style="font-size:12px;">+0.00%</span></div>
-            <div onclick="toggleChart()" style="font-size:12px; padding:6px 12px; background:#333; border-radius:4px;"><i class="fas fa-chart-line"></i> Chart</div>
-        </div>
-        <div id="chart-container"></div>
-        <div class="trade-layout">
-            <div class="col-left">
-                <div style="display:flex; justify-content:space-between; padding:0 5px; font-size:10px; color:var(--text-secondary);"><span>Giá</span><span>SL</span></div>
-                <div id="asks-box" style="flex:1; display:flex; flex-direction:column-reverse; overflow:hidden;"></div>
-                <div style="text-align:center; font-size:18px; font-weight:700; color:var(--green); padding:8px 0;" id="trade-price">---</div>
-                <div id="bids-box" style="flex:1; overflow:hidden;"></div>
+    <div class="coin-list">
+        <div class="coin-item" style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #2b3139;">
+            <div class="left">
+                <span style="font-weight: 700; color: #eaecef;">USDT</span>
             </div>
-            <div class="col-right">
-                <div style="display:flex; gap:10px;">
-                    <div class="type-btn active-buy" id="btn-buy" onclick="setTradeMode('buy')">Mua</div>
-                    <div class="type-btn" id="btn-sell" onclick="setTradeMode('sell')">Bán</div>
-                </div>
-                <div style="margin-top:10px;"><input type="text" id="inp-price" class="input-box" readonly placeholder="Giá"></div>
-                <div style="margin-top:10px;"><input type="number" id="inp-amt" class="input-box" placeholder="Số lượng" oninput="calcTotal()"></div>
-                <div style="margin-top:5px; font-size:11px; text-align:right;">Phí (0.1%): <span id="trade-fee" style="color:var(--text-secondary);">0.00 $</span></div>
-                <div style="margin-top:2px; font-size:11px; text-align:right;">Tổng: <span id="trade-total" style="color:white; font-weight:bold;">0.00 $</span></div>
-                <div style="font-size:12px; text-align:right; margin-top:10px; color:#888;">Khả dụng: <span id="avail-trade" style="color:var(--gold); font-weight:bold;">---</span></div>
-                <button class="btn-action" id="btn-action" style="background:var(--green)" onclick="doTrade()">MUA NGAY</button>
+            <div class="right" style="text-align: right;">
+                <div id="usdt-balance" style="color: #eaecef; font-weight: 600;">10000.00</div>
+                <div style="color: #848e9c; font-size: 12px;">$10,000.00</div>
             </div>
         </div>
-    </div>
 
-    <div id="view-assets" class="view-section">
-        <div class="app-header">Ví của tôi</div>
-        <div class="asset-card">
-            <div style="font-size:12px;">Tổng giá trị ước tính</div>
-            <div class="total-balance" id="asset-total">0.00 $</div>
-        </div>
-        <div class="quick-actions">
-            <div class="action-btn" onclick="fakeAction('Nạp')"><i class="fas fa-arrow-down"></i>Nạp</div>
-            <div class="action-btn" onclick="fakeAction('Rút')"><i class="fas fa-arrow-up"></i>Rút</div>
-            <div class="action-btn" onclick="showToast('Tính năng đang bảo trì', 'info')"><i class="fas fa-exchange-alt"></i>Chuyển</div>
-            <div class="action-btn" onclick="window.location.reload()"><i class="fas fa-sync-alt"></i>Reset</div>
-        </div>
-        <div id="asset-list"></div>
-    </div>
-
-    <div id="user-modal" onclick="openProfile()">
-        <div class="profile-content" onclick="event.stopPropagation()">
-            <div style="text-align:center;margin-bottom:20px;">
-                <i class="fas fa-user-circle" style="font-size:60px;color:#fcd535"></i>
-                <div id="modal-email" style="font-weight:bold;margin-top:10px;">...</div>
-                <div id="kyc-badge-modal" style="margin-top:10px;">
-                    <button onclick="verifyIdentity()" id="btn-kyc" style="background:#333; border:1px solid #555; color:white; padding:5px 10px; border-radius:4px;">Xác minh danh tính (KYC)</button>
-                </div>
+        <div class="coin-item" style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #2b3139;">
+            <div class="left">
+                <span style="font-weight: 700; color: #eaecef;">BTC</span>
             </div>
-            <script>
+            <div class="right" style="text-align: right;">
+                <div id="btc-balance" style="color: #eaecef; font-weight: 600;">0.5000</div>
+                <div id="btc-value" style="color: #848e9c; font-size: 12px;">Waiting...</div>
+            </div>
+        </div>
+
+        <div class="coin-item" style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #2b3139;">
+            <div class="left">
+                <span style="font-weight: 700; color: #eaecef;">ETH</span>
+            </div>
+            <div class="right" style="text-align: right;">
+                <div id="eth-balance" style="color: #eaecef; font-weight: 600;">2.0000</div>
+                <div id="eth-value" style="color: #848e9c; font-size: 12px;">Waiting...</div>
+            </div>
+        </div>
+    </div>
+</div>
+        <div class="nav-item" onclick="switchTab('trade', 2)"><i class="fas fa-exchange-alt"></i></div>
+        <div class="nav-item" onclick="switchTab('assets', 3)"><i class="fas fa-wallet"></i></div>
+    </div>
+
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="js/ui.js"></script>
+    <script type="module" src="js/app.js"></script>
+<script>
     // 1. CẤU HÌNH SỐ DƯ (Lấy từ Login hoặc mặc định)
     // Đây là nơi anh chỉnh số coin anh muốn hiển thị
     const myWallet = {
@@ -194,12 +239,5 @@
     setTimeout(initChart, 1000);
 
 </script>
-        <div class="nav-item" onclick="switchTab('trade', 2)"><i class="fas fa-exchange-alt"></i></div>
-        <div class="nav-item" onclick="switchTab('assets', 3)"><i class="fas fa-wallet"></i></div>
-    </div>
-
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-    <script src="js/ui.js"></script>
-    <script type="module" src="js/app.js"></script>
 </body>
 </html>
