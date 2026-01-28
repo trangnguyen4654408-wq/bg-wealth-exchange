@@ -20,7 +20,16 @@ window.renderLists = function() {
         </div>`;
     });
     document.getElementById('home-list').innerHTML = h;
-    document.getElementById('market-full-list').innerHTML = h;
+
+    // Separate loop for Market List to use unique IDs
+    let hm = "";
+    coins.forEach(c => {
+        hm += `<div class="coin-row" id="market-row-${c}" onclick="selectCoin('${c}')">
+            <div style="display:flex;align-items:center;"><img class="coin-logo" src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${c.toLowerCase()}.png"><b>${c}/USDT</b></div>
+            <div style="text-align:right"><b class="p-val" style="color:white">---</b><div class="pc-val" style="font-size:11px;">0.00%</div></div>
+        </div>`;
+    });
+    document.getElementById('market-full-list').innerHTML = hm;
 
     // Menu coin
     let mh = "";
@@ -157,11 +166,20 @@ function updatePrice(coin, price, pct) {
     const col = pct >= 0 ? 'var(--green)' : 'var(--red)';
     const pStr = price < 1 ? price.toFixed(6) : price.toFixed(2);
 
-    // Direct DOM update (Fast)
+    // Direct DOM update (Home List)
     const row = document.getElementById('row-'+coin);
     if(row) {
         row.querySelector('.p-val').innerText = pStr;
         const pc = row.querySelector('.pc-val');
+        pc.innerText = pct.toFixed(2) + '%';
+        pc.style.color = col;
+    }
+
+    // Direct DOM update (Market List)
+    const mRow = document.getElementById('market-row-'+coin);
+    if(mRow) {
+        mRow.querySelector('.p-val').innerText = pStr;
+        const pc = mRow.querySelector('.pc-val');
         pc.innerText = pct.toFixed(2) + '%';
         pc.style.color = col;
     }
@@ -235,45 +253,40 @@ function updateTotalBalanceOnly() {
     if(e2) e2.innerText = s;
 }
 
-// LIGHTWEIGHT CHART
+// TRADINGVIEW CHART (Reverted as requested)
 function loadChart(c) {
     const container = document.getElementById('chart-container');
-    container.innerHTML = '';
+    container.innerHTML = ''; // Clear previous
 
-    // Create Chart
-    chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth,
-        height: 300,
-        layout: { background: { type: 'solid', color: '#12161c' }, textColor: '#d1d4dc' },
-        grid: { vertLines: { color: 'rgba(42, 46, 57, 0.5)' }, horzLines: { color: 'rgba(42, 46, 57, 0.5)' } },
-        timeScale: { timeVisible: true, secondsVisible: false }
-    });
+    // Inject TradingView Widget Script & Container
+    const div = document.createElement('div');
+    div.id = 'tradingview_widget';
+    div.style.height = "300px";
+    container.appendChild(div);
 
-    candleSeries = chart.addCandlestickSeries({
-        upColor: '#0ecb81', downColor: '#f6465d', borderUpColor: '#0ecb81', borderDownColor: '#f6465d', wickUpColor: '#0ecb81', wickDownColor: '#f6465d',
-    });
-
-    // Mock initial data or Fetch
-    // Fetch Binance Klines
-    fetch(`https://api.binance.com/api/v3/klines?symbol=${c}USDT&interval=15m&limit=100`)
-    .then(r => r.json())
-    .then(data => {
-        const cdata = data.map(d => ({
-            time: d[0] / 1000 + 7*3600, // Adjust timezone roughly if needed, or just use UTC
-            open: parseFloat(d[1]),
-            high: parseFloat(d[2]),
-            low: parseFloat(d[3]),
-            close: parseFloat(d[4])
-        }));
-        candleSeries.setData(cdata);
-    });
-
-    // Resize handler
-    new ResizeObserver(entries => {
-        if (entries.length === 0 || entries[0].target !== container) { return; }
-        const newRect = entries[0].contentRect;
-        chart.applyOptions({ width: newRect.width, height: newRect.height });
-    }).observe(container);
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.async = true;
+    script.onload = () => {
+        if(typeof TradingView !== 'undefined') {
+            new TradingView.widget({
+                "width": "100%",
+                "height": 300,
+                "symbol": "BINANCE:" + c + "USDT",
+                "interval": "15",
+                "timezone": "Asia/Ho_Chi_Minh",
+                "theme": "dark",
+                "style": "1",
+                "locale": "vi_VN",
+                "toolbar_bg": "#f1f3f6",
+                "enable_publishing": false,
+                "hide_top_toolbar": true,
+                "save_image": false,
+                "container_id": "tradingview_widget"
+            });
+        }
+    };
+    container.appendChild(script);
 }
 
 // 5. Cập nhật số dư UI (Detailed Wallet)
@@ -462,6 +475,12 @@ try {
     ws.onopen = () => console.log("Connected to Binance WebSocket");
     ws.onmessage = (e) => {
         const data = JSON.parse(e.data);
+
+        // LOGGING FOR VERIFICATION
+        if(data.length > 0 && Math.random() < 0.05) { // Log occasionally to avoid spam
+            console.log("WS Data Received:", data[0].s, data[0].c);
+        }
+
         data.forEach(d => {
             if(d.s.endsWith('USDT')) {
                 const s = d.s.replace('USDT','');
